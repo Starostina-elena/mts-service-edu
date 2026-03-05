@@ -1,10 +1,22 @@
 -- V1: create all model tables for the application
-
-CREATE TYPE IF NOT EXISTS role_enum AS ENUM ('USER','ADMIN','MANAGER');
-CREATE TYPE IF NOT EXISTS tariff_category_enum AS ENUM ('HOME','MOBILE','DEVICES','LANDLINE','SATELLITE_TV','BUSINESS');
-CREATE TYPE IF NOT EXISTS tariff_status_enum AS ENUM ('ACTIVE','ARCHIVED');
-CREATE TYPE IF NOT EXISTS application_status_enum AS ENUM ('PENDING','APPROVED','REJECTED','CONNECTED');
-CREATE TYPE IF NOT EXISTS device_type_enum AS ENUM ('WATCH','MODEM');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'role_enum') THEN
+        CREATE TYPE role_enum AS ENUM ('USER','ADMIN','MANAGER');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tariff_category_enum') THEN
+        CREATE TYPE tariff_category_enum AS ENUM ('HOME','MOBILE','DEVICES','LANDLINE','SATELLITE_TV','BUSINESS');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tariff_status_enum') THEN
+        CREATE TYPE tariff_status_enum AS ENUM ('ACTIVE','ARCHIVED');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'application_status_enum') THEN
+        CREATE TYPE application_status_enum AS ENUM ('PENDING','APPROVED','REJECTED','CONNECTED');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'device_type_enum') THEN
+        CREATE TYPE device_type_enum AS ENUM ('WATCH','MODEM');
+    END IF;
+END$$;
 
 CREATE TABLE IF NOT EXISTS users (
   id BIGSERIAL PRIMARY KEY,
@@ -113,3 +125,4 @@ CREATE INDEX IF NOT EXISTS idx_tcp_tariff_id ON tariff_city_prices(tariff_id);
 CREATE INDEX IF NOT EXISTS idx_tcp_city_id ON tariff_city_prices(city_id);
 CREATE INDEX IF NOT EXISTS idx_ts_service_id ON tariff_services(service_id);
 CREATE INDEX IF NOT EXISTS idx_as_service_id ON application_services(service_id);
+
