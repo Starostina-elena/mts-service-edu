@@ -24,7 +24,7 @@ public class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    // @NotNull
+    @NotNull
     @Column(length = 255)
     private String passwordHash;
 
