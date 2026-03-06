@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(100) NOT NULL,
   password_hash VARCHAR(255),
   role role_enum NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS cities (
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS services (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
   price NUMERIC(10,2) NOT NULL,
-  description TEXT NoT NULL
+  description VARCHAR(2048) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tariffs (
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS tariffs (
   category tariff_category_enum NOT NULL,
   base_price NUMERIC(10,2),
   status tariff_status_enum NOT NULL DEFAULT 'ACTIVE',
-  description TEXT,
+  description VARCHAR(2048),
   speed_mbps INTEGER,
   tv_channels INTEGER,
   internet_gb INTEGER,
@@ -61,9 +61,9 @@ CREATE TABLE IF NOT EXISTS tariffs (
   mobile_minutes INTEGER,
   channels_total INTEGER,
   channels_hd INTEGER,
-  sla_description TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+  sla_description VARCHAR(2048),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- many-to-many тарифы-услуги
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS balances (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
   amount NUMERIC(10,2) NOT NULL,
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT fk_balances_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
@@ -100,11 +100,11 @@ CREATE TABLE IF NOT EXISTS applications (
   tariff_name VARCHAR(150) NOT NULL,
   address VARCHAR(500) NOT NULL,
   status application_status_enum NOT NULL DEFAULT 'PENDING',
-  reject_reason TEXT,
+  reject_reason VARCHAR(2048),
   passport_verified BOOLEAN NOT NULL DEFAULT FALSE,
   technical_feasibility BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT fk_app_user FOREIGN KEY (user_id) REFERENCES users(id),
   CONSTRAINT fk_app_tariff FOREIGN KEY (tariff_id) REFERENCES tariffs(id)
 );
