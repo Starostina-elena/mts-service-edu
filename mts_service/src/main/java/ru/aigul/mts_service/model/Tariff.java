@@ -29,7 +29,7 @@ public class Tariff {
     @Column(nullable = false, length = 20)
     private TariffCategory category;
 
-    @Column(precision = 19, scale = 2)
+    @Column(precision = 10, scale = 2)
     private BigDecimal basePrice;
 
     @NotNull

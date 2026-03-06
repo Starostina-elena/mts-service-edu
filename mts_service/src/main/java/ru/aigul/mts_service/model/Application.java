@@ -29,8 +29,12 @@ public class Application {
     @JoinColumn(name = "tariff_id", nullable = false)
     private Tariff tariff;
 
+    /**
+     * Snapshot of tariff name at application creation time.
+     * Stored for audit purposes even if the tariff is renamed later.
+     */
     @NotNull
-    @Column(nullable = false, length = 150)
+    @Column(name = "tariff_name", nullable = false, length = 150)
     private String tariffName;
 
     @NotNull

@@ -20,9 +20,9 @@ public class Service {
     private String name;
 
     @NotNull
-    @Column(nullable = false, precision = 19, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 }

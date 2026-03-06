@@ -37,15 +37,15 @@ CREATE TABLE IF NOT EXISTS cities (
 CREATE TABLE IF NOT EXISTS services (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  price NUMERIC(19,2) NOT NULL,
-  description TEXT
+  price NUMERIC(10,2) NOT NULL,
+  description TEXT NoT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tariffs (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
   category tariff_category_enum NOT NULL,
-  base_price NUMERIC(19,2),
+  base_price NUMERIC(10,2),
   status tariff_status_enum NOT NULL DEFAULT 'ACTIVE',
   description TEXT,
   speed_mbps INTEGER,
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS tariff_city_prices (
   id BIGSERIAL PRIMARY KEY,
   tariff_id BIGINT NOT NULL,
   city_id BIGINT NOT NULL,
-  price NUMERIC(19,2) NOT NULL,
+  price NUMERIC(10,2) NOT NULL,
   CONSTRAINT uq_tariff_city UNIQUE (tariff_id, city_id),
   CONSTRAINT fk_tcp_tariff FOREIGN KEY (tariff_id) REFERENCES tariffs(id),
   CONSTRAINT fk_tcp_city FOREIGN KEY (city_id) REFERENCES cities(id)
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS tariff_city_prices (
 CREATE TABLE IF NOT EXISTS balances (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
-  amount NUMERIC(19,2) NOT NULL,
+  amount NUMERIC(10,2) NOT NULL,
   updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
   CONSTRAINT fk_balances_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
