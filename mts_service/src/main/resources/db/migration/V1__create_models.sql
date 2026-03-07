@@ -97,7 +97,6 @@ CREATE TABLE IF NOT EXISTS applications (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL,
   tariff_id BIGINT NOT NULL,
-  tariff_name VARCHAR(150) NOT NULL,
   address VARCHAR(500) NOT NULL,
   status application_status_enum NOT NULL DEFAULT 'PENDING',
   reject_reason VARCHAR(2048),
