@@ -1,0 +1,1207 @@
+openapi: 3.0.3
+info:
+  title: ИС Каталог и Личный кабинет пользователя
+  description: |
+    REST API для системы управления тарифами, заявками на подключение и личным кабинетом.
+
+    ## Категории тарифов и их DTO
+    Модель тарифа в БД единая (с полем `category`), но карточки отличаются набором полей:
+    - **home** — скорость, ТВ-каналы, доп. услуги, цена по городу
+    - **mobile** — ГБ интернета, минуты, SMS, флаги для_семьи / без_абон_платы
+    - **devices** — ГБ интернета, тип устройства (часы / модем)
+    - **landline** — минуты, цена по городу
+    - **satellite_tv** — кол-во каналов, цена по городу
+    - **business** — скорость, описание SLA, доп. услуги
+  version: 1.1.0
+
+tags:
+  - name: catalog-home
+    description: "Вкладка 1: Связь, ТВ и интернет"
+  - name: catalog-mobile
+    description: "Вкладка 2: Мобильная связь"
+  - name: catalog-devices
+    description: "Вкладка 3: Для часов и модемов"
+  - name: catalog-landline
+    description: "Вкладка 4: Домашний телефон"
+  - name: catalog-satellite
+    description: "Вкладка 5: Спутниковое ТВ"
+  - name: catalog-business
+    description: "Вкладка 6: Тарифы для бизнеса"
+  - name: catalog-common
+    description: Общие эндпоинты каталога
+  - name: tariffs
+    description: Управление тарифами (Администратор)
+  - name: applications
+    description: Заявки на подключение
+  - name: account
+    description: Личный кабинет пользователя
+  - name: balance
+    description: Баланс и платежи
+
+paths:
+
+  /catalog/home:
+    get:
+      tags: [catalog-home]
+      summary: Тарифы «Связь, ТВ и интернет»
+      description: Цена и доступность зависят от города. Карточка содержит скорость, ТВ-каналы, доп. услуги.
+      parameters:
+        - name: city_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "city_msk"
+        - name: price_max
+          in: query
+          schema:
+            type: number
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Список тарифов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TariffHomeCard'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Передай в параметр after для загрузки следующей порции. null — больше данных нет.
+                  has_more:
+                    type: boolean
+        '400':
+          description: Не передан city_id
+
+  /catalog/mobile:
+    get:
+      tags: [catalog-mobile]
+      summary: Тарифы «Мобильная связь»
+      description: Федеральные тарифы, цена не зависит от города. Карточка содержит ГБ, минуты, SMS, флаги.
+      parameters:
+        - name: internet_gb
+          in: query
+          schema:
+            type: integer
+          description: Минимальный объём интернета, ГБ
+        - name: calls_minutes
+          in: query
+          schema:
+            type: integer
+          description: Минимальное кол-во минут
+        - name: for_family
+          in: query
+          schema:
+            type: boolean
+          description: true — только семейные тарифы
+        - name: no_subscription_fee
+          in: query
+          schema:
+            type: boolean
+          description: true — только без абонентской платы
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Список тарифов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TariffMobileCard'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Передай в параметр after для загрузки следующей порции. null — больше данных нет.
+                  has_more:
+                    type: boolean
+
+  /catalog/devices:
+    get:
+      tags: [catalog-devices]
+      summary: Тарифы «Для часов и модемов»
+      description: Без фильтров. Карточка содержит объём интернета и тип устройства.
+      parameters:
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Список тарифов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TariffDeviceCard'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Передай в параметр after для загрузки следующей порции. null — больше данных нет.
+                  has_more:
+                    type: boolean
+
+  /catalog/landline:
+    get:
+      tags: [catalog-landline]
+      summary: Тарифы «Домашний телефон»
+      description: Цена зависит от города. Карточка содержит минуты на городские/межгород/мобильные.
+      parameters:
+        - name: city_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "city_spb"
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Список тарифов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TariffLandlineCard'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Передай в параметр after для загрузки следующей порции. null — больше данных нет.
+                  has_more:
+                    type: boolean
+        '400':
+          description: Не передан city_id
+
+  /catalog/satellite-tv:
+    get:
+      tags: [catalog-satellite]
+      summary: Тарифы «Спутниковое ТВ»
+      description: Цена зависит от города. Карточка содержит кол-во каналов и HD-каналов.
+      parameters:
+        - name: city_id
+          in: query
+          required: true
+          schema:
+            type: string
+          example: "city_nsk"
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Список тарифов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TariffSatelliteCard'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Передай в параметр after для загрузки следующей порции. null — больше данных нет.
+                  has_more:
+                    type: boolean
+        '400':
+          description: Не передан city_id
+
+  /catalog/business:
+    get:
+      tags: [catalog-business]
+      summary: Тарифы «Для бизнеса»
+      description: Без фильтров. Карточка содержит скорость, SLA, доп. услуги.
+      parameters:
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Список тарифов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TariffBusinessCard'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Передай в параметр after для загрузки следующей порции. null — больше данных нет.
+                  has_more:
+                    type: boolean
+
+  /catalog/tariffs/{tariffId}:
+    get:
+      tags: [catalog-common]
+      summary: Детали тарифа (любой категории)
+      description: |
+        Тип ответа определяется по полю `category`.
+        Для home/landline/satellite_tv передай city_id для актуальной цены.
+      parameters:
+        - $ref: '#/components/parameters/TariffId'
+        - name: city_id
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Карточка тарифа
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TariffHomeCard'
+                  - $ref: '#/components/schemas/TariffMobileCard'
+                  - $ref: '#/components/schemas/TariffDeviceCard'
+                  - $ref: '#/components/schemas/TariffLandlineCard'
+                  - $ref: '#/components/schemas/TariffSatelliteCard'
+                  - $ref: '#/components/schemas/TariffBusinessCard'
+                discriminator:
+                  propertyName: category
+                  mapping:
+                    home: '#/components/schemas/TariffHomeCard'
+                    mobile: '#/components/schemas/TariffMobileCard'
+                    devices: '#/components/schemas/TariffDeviceCard'
+                    landline: '#/components/schemas/TariffLandlineCard'
+                    satellite_tv: '#/components/schemas/TariffSatelliteCard'
+                    business: '#/components/schemas/TariffBusinessCard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /catalog/cities:
+    get:
+      tags: [catalog-common]
+      summary: Справочник городов
+      description: Для фильтров вкладок home, landline, satellite_tv.
+      responses:
+        '200':
+          description: Список городов
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+
+  /catalog/services:
+    get:
+      tags: [catalog-common]
+      summary: Список дополнительных услуг
+      responses:
+        '200':
+          description: Список услуг
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+
+  /applications:
+    post:
+      tags: [applications]
+      summary: Подать заявку на подключение
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplicationCreate'
+      responses:
+        '201':
+          description: Заявка создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '402':
+          description: Недостаточно средств
+        '422':
+          description: Ошибка валидации
+
+    get:
+      tags: [applications]
+      summary: Список заявок (Менеджер / Администратор)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/ApplicationStatus'
+        - $ref: '#/components/parameters/After'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Список заявок
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+                  next_cursor:
+                    type: string
+                    nullable: true
+                    description: Передай в параметр after для загрузки следующей порции. null — больше данных нет.
+                  has_more:
+                    type: boolean
+
+  /applications/{applicationId}:
+    get:
+      tags: [applications]
+      summary: Детали заявки
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Подробная информация о заявке
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /applications/{applicationId}/approve:
+    post:
+      tags: [applications]
+      summary: Одобрить заявку (Администратор)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      responses:
+        '200':
+          description: Заявка одобрена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        '409':
+          description: Заявка уже обработана
+
+  /applications/{applicationId}/reject:
+    post:
+      tags: [applications]
+      summary: Отклонить заявку (Администратор)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ApplicationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  example: "Технически невозможно подключение по данному адресу"
+      responses:
+        '200':
+          description: Заявка отклонена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+
+  /account/tariff:
+    get:
+      tags: [account]
+      summary: Текущий тариф пользователя
+      description: |
+        Возвращает активный тариф.
+        Если тариф ещё не подключён — возвращает 200 с `tariff: null`.
+        Это не ошибка: пользователь мог ещё не оформить подключение.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Текущий тариф или null если тариф не подключён
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tariff:
+                    nullable: true
+                    description: null если тариф не подключён
+                    oneOf:
+                      - $ref: '#/components/schemas/TariffHomeCard'
+                      - $ref: '#/components/schemas/TariffMobileCard'
+                      - $ref: '#/components/schemas/TariffDeviceCard'
+                      - $ref: '#/components/schemas/TariffLandlineCard'
+                      - $ref: '#/components/schemas/TariffSatelliteCard'
+                      - $ref: '#/components/schemas/TariffBusinessCard'
+                    discriminator:
+                      propertyName: category
+
+    patch:
+      tags: [account]
+      summary: Настроить текущий тариф (доп. услуги)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TariffConfigure'
+      responses:
+        '200':
+          description: Настройки обновлены
+        '409':
+          description: Тариф не подключён, нечего настраивать
+        '422':
+          description: Ошибка валидации
+
+  /account/services:
+    get:
+      tags: [account]
+      summary: Подключённые доп. услуги
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список подключённых услуг
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+
+    post:
+      tags: [account]
+      summary: Подключить дополнительные услуги
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [service_ids]
+              properties:
+                service_ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["svc_001", "svc_002"]
+      responses:
+        '200':
+          description: Услуги подключены
+        '402':
+          description: Недостаточно средств
+
+  /account/applications:
+    get:
+      tags: [account]
+      summary: Мои заявки (для отслеживания статуса)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Список заявок пользователя
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Application'
+
+  /account/balance:
+    get:
+      tags: [balance]
+      summary: Проверить баланс
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Текущий баланс
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Balance'
+
+  /account/balance/top-up:
+    post:
+      tags: [balance]
+      summary: Инициировать пополнение баланса
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                  minimum: 1
+                  example: 500
+                return_url:
+                  type: string
+                  description: URL для редиректа после оплаты
+      responses:
+        '200':
+          description: Платёжная ссылка создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment_url:
+                    type: string
+                  payment_id:
+                    type: string
+
+  /account/check-technical-feasibility:
+    post:
+      tags: [balance]
+      summary: Проверить техническую возможность подключения
+      description: |
+        Только для домашних категорий: **home**, **landline**, **satellite_tv**.
+        Для mobile и devices не применимо.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address, tariff_id]
+              properties:
+                address:
+                  type: string
+                  example: "г. Москва, ул. Примерная, д. 1, кв. 10"
+                tariff_id:
+                  type: string
+      responses:
+        '200':
+          description: Результат проверки
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  feasible:
+                    type: boolean
+                  reason:
+                    type: string
+                    nullable: true
+                    description: Причина отказа (если feasible = false)
+        '422':
+          description: Тариф не относится к домашним категориям
+
+  /admin/tariffs:
+    post:
+      tags: [tariffs]
+      summary: Создать тарифный план
+      description: Тело запроса зависит от категории. Дискриминатор — поле `category`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/TariffHomeCreate'
+                - $ref: '#/components/schemas/TariffMobileCreate'
+                - $ref: '#/components/schemas/TariffDeviceCreate'
+                - $ref: '#/components/schemas/TariffLandlineCreate'
+                - $ref: '#/components/schemas/TariffSatelliteCreate'
+                - $ref: '#/components/schemas/TariffBusinessCreate'
+              discriminator:
+                propertyName: category
+                mapping:
+                  home: '#/components/schemas/TariffHomeCreate'
+                  mobile: '#/components/schemas/TariffMobileCreate'
+                  devices: '#/components/schemas/TariffDeviceCreate'
+                  landline: '#/components/schemas/TariffLandlineCreate'
+                  satellite_tv: '#/components/schemas/TariffSatelliteCreate'
+                  business: '#/components/schemas/TariffBusinessCreate'
+      responses:
+        '201':
+          description: Тариф создан
+        '422':
+          description: Ошибка валидации
+
+  /admin/tariffs/{tariffId}:
+    put:
+      tags: [tariffs]
+      summary: Редактировать тариф
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TariffId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/TariffHomeCreate'
+                - $ref: '#/components/schemas/TariffMobileCreate'
+                - $ref: '#/components/schemas/TariffDeviceCreate'
+                - $ref: '#/components/schemas/TariffLandlineCreate'
+                - $ref: '#/components/schemas/TariffSatelliteCreate'
+                - $ref: '#/components/schemas/TariffBusinessCreate'
+              discriminator:
+                propertyName: category
+                mapping:
+                  home: '#/components/schemas/TariffHomeCreate'
+                  mobile: '#/components/schemas/TariffMobileCreate'
+                  devices: '#/components/schemas/TariffDeviceCreate'
+                  landline: '#/components/schemas/TariffLandlineCreate'
+                  satellite_tv: '#/components/schemas/TariffSatelliteCreate'
+                  business: '#/components/schemas/TariffBusinessCreate'
+      responses:
+        '200':
+          description: Тариф обновлён
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /admin/tariffs/{tariffId}/archive:
+    post:
+      tags: [tariffs]
+      summary: Архивировать тариф
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TariffId'
+      responses:
+        '200':
+          description: Тариф переведён в архив
+        '409':
+          description: Тариф уже архивирован
+
+  /admin/tariffs/{tariffId}/connect:
+    post:
+      tags: [tariffs]
+      summary: Подключить тариф пользователю (после одобрения заявки)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TariffId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, application_id]
+              properties:
+                user_id:
+                  type: string
+                application_id:
+                  type: string
+      responses:
+        '200':
+          description: Тариф подключён
+        '422':
+          description: Ошибка подключения
+
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TariffId:
+      name: tariffId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "trf_abc123"
+
+    ApplicationId:
+      name: applicationId
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "app_xyz789"
+
+    After:
+      name: after
+      in: query
+      description: Cursor — id последнего полученного тарифа. Передаётся из поля next_cursor предыдущего ответа. Не передавай при первом запросе.
+      schema:
+        type: string
+      example: "trf_abc123"
+
+    Limit:
+      name: limit
+      in: query
+      description: Кол-во элементов на странице
+      schema:
+        type: integer
+        default: 20
+        maximum: 100
+
+  responses:
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+
+    # ── КАРТОЧКИ ТАРИФОВ (ответ) ──────────────────────────
+
+    TariffBase:
+      type: object
+      description: Общие поля для всех карточек тарифов
+      required: [id, name, category, price, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: "Домашний Лайт"
+        category:
+          type: string
+          enum: [home, mobile, devices, landline, satellite_tv, business]
+        price:
+          type: number
+          example: 499.00
+        status:
+          type: string
+          enum: [active, archived]
+        description:
+          type: string
+          nullable: true
+
+    TariffHomeCard:
+      description: "Карточка «Связь, ТВ и интернет»"
+      allOf:
+        - $ref: '#/components/schemas/TariffBase'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [home]
+            speed_mbps:
+              type: integer
+              example: 500
+            tv_channels:
+              type: integer
+              example: 200
+              nullable: true
+            services:
+              type: array
+              items:
+                $ref: '#/components/schemas/Service'
+
+    TariffMobileCard:
+      description: "Карточка «Мобильная связь»"
+      allOf:
+        - $ref: '#/components/schemas/TariffBase'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [mobile]
+            internet_gb:
+              type: integer
+              example: 30
+            calls_minutes:
+              type: integer
+              example: 500
+            sms_count:
+              type: integer
+              example: 100
+              nullable: true
+            for_family:
+              type: boolean
+              example: false
+            no_subscription_fee:
+              type: boolean
+              example: false
+
+    TariffDeviceCard:
+      description: "Карточка «Для часов и модемов»"
+      allOf:
+        - $ref: '#/components/schemas/TariffBase'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [devices]
+            internet_gb:
+              type: integer
+              example: 10
+            device_type:
+              type: string
+              enum: [watch, modem]
+
+    TariffLandlineCard:
+      description: "Карточка «Домашний телефон»"
+      allOf:
+        - $ref: '#/components/schemas/TariffBase'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [landline]
+            local_minutes:
+              type: integer
+              nullable: true
+              description: null = безлимит
+            intercity_minutes:
+              type: integer
+              nullable: true
+            mobile_minutes:
+              type: integer
+              nullable: true
+
+    TariffSatelliteCard:
+      description: "Карточка «Спутниковое ТВ»"
+      allOf:
+        - $ref: '#/components/schemas/TariffBase'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [satellite_tv]
+            channels_total:
+              type: integer
+              example: 350
+            channels_hd:
+              type: integer
+              example: 80
+              nullable: true
+
+    TariffBusinessCard:
+      description: "Карточка «Для бизнеса»"
+      allOf:
+        - $ref: '#/components/schemas/TariffBase'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [business]
+            speed_mbps:
+              type: integer
+              example: 1000
+            sla_description:
+              type: string
+              nullable: true
+              example: "Гарантированный аптайм 99.9%"
+            services:
+              type: array
+              items:
+                $ref: '#/components/schemas/Service'
+
+    # ── СОЗДАНИЕ ТАРИФОВ (запрос) ─────────────────────────
+
+    TariffCreateBase:
+      type: object
+      required: [name, category, price]
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+          enum: [home, mobile, devices, landline, satellite_tv, business]
+        price:
+          type: number
+          minimum: 0
+        description:
+          type: string
+          nullable: true
+
+    TariffCityPrices:
+      type: object
+      properties:
+        city_prices:
+          type: array
+          description: Цены по городам. Если города нет в списке — тариф там недоступен.
+          items:
+            type: object
+            required: [city_id, price]
+            properties:
+              city_id:
+                type: string
+              price:
+                type: number
+
+    TariffHomeCreate:
+      allOf:
+        - $ref: '#/components/schemas/TariffCreateBase'
+        - $ref: '#/components/schemas/TariffCityPrices'
+        - type: object
+          required: [speed_mbps]
+          properties:
+            category:
+              type: string
+              enum: [home]
+            speed_mbps:
+              type: integer
+              minimum: 1
+            tv_channels:
+              type: integer
+              nullable: true
+            service_ids:
+              type: array
+              items:
+                type: string
+
+    TariffMobileCreate:
+      allOf:
+        - $ref: '#/components/schemas/TariffCreateBase'
+        - type: object
+          required: [internet_gb, calls_minutes]
+          properties:
+            category:
+              type: string
+              enum: [mobile]
+            internet_gb:
+              type: integer
+              minimum: 0
+            calls_minutes:
+              type: integer
+              minimum: 0
+            sms_count:
+              type: integer
+              nullable: true
+            for_family:
+              type: boolean
+              default: false
+            no_subscription_fee:
+              type: boolean
+              default: false
+
+    TariffDeviceCreate:
+      allOf:
+        - $ref: '#/components/schemas/TariffCreateBase'
+        - type: object
+          required: [internet_gb, device_type]
+          properties:
+            category:
+              type: string
+              enum: [devices]
+            internet_gb:
+              type: integer
+              minimum: 0
+            device_type:
+              type: string
+              enum: [watch, modem]
+
+    TariffLandlineCreate:
+      allOf:
+        - $ref: '#/components/schemas/TariffCreateBase'
+        - $ref: '#/components/schemas/TariffCityPrices'
+        - type: object
+          properties:
+            category:
+              type: string
+              enum: [landline]
+            local_minutes:
+              type: integer
+              nullable: true
+            intercity_minutes:
+              type: integer
+              nullable: true
+            mobile_minutes:
+              type: integer
+              nullable: true
+
+    TariffSatelliteCreate:
+      allOf:
+        - $ref: '#/components/schemas/TariffCreateBase'
+        - $ref: '#/components/schemas/TariffCityPrices'
+        - type: object
+          required: [channels_total]
+          properties:
+            category:
+              type: string
+              enum: [satellite_tv]
+            channels_total:
+              type: integer
+              minimum: 1
+            channels_hd:
+              type: integer
+              nullable: true
+
+    TariffBusinessCreate:
+      allOf:
+        - $ref: '#/components/schemas/TariffCreateBase'
+        - type: object
+          required: [speed_mbps]
+          properties:
+            category:
+              type: string
+              enum: [business]
+            speed_mbps:
+              type: integer
+              minimum: 1
+            sla_description:
+              type: string
+              nullable: true
+            service_ids:
+              type: array
+              items:
+                type: string
+
+    TariffConfigure:
+      type: object
+      properties:
+        service_ids:
+          type: array
+          items:
+            type: string
+
+    # ── СПРАВОЧНИКИ ───────────────────────────────────────
+
+    City:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "city_msk"
+        name:
+          type: string
+          example: "Москва"
+        region:
+          type: string
+          example: "Московская область"
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          example: "Антивирус"
+        price:
+          type: number
+          example: 99.00
+        description:
+          type: string
+
+    # ── ЗАЯВКИ ────────────────────────────────────────────
+
+    ApplicationCreate:
+      type: object
+      required: [tariff_id, address]
+      properties:
+        tariff_id:
+          type: string
+        address:
+          type: string
+          example: "г. Москва, ул. Примерная, д. 1, кв. 10"
+        additional_service_ids:
+          type: array
+          items:
+            type: string
+
+    ApplicationStatus:
+      type: string
+      enum: [pending, approved, rejected, connected]
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        tariff_id:
+          type: string
+        tariff_name:
+          type: string
+        address:
+          type: string
+        status:
+          $ref: '#/components/schemas/ApplicationStatus'
+        reject_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ApplicationDetail:
+      allOf:
+        - $ref: '#/components/schemas/Application'
+        - type: object
+          properties:
+            additional_services:
+              type: array
+              items:
+                $ref: '#/components/schemas/Service'
+            passport_verified:
+              type: boolean
+            technical_feasibility:
+              type: boolean
+
+    # ── БАЛАНС ────────────────────────────────────────────
+
+    Balance:
+      type: object
+      properties:
+        amount:
+          type: number
+          example: 1250.50
+        currency:
+          type: string
+          example: "RUB"
+        updated_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
