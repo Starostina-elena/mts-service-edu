@@ -3,6 +3,7 @@ package ru.aigul.mts_service.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -128,6 +129,12 @@ public class AdminTariffController {
         }
 
         return ResponseEntity.status(201).body(java.util.Map.of("id", saved.getId()));
+    }
+
+    @PostMapping("/tariffs/{tariffId}/archive")
+    public ResponseEntity<?> archiveTariff(@PathVariable("tariffId") Long tariffId) {
+        adminTariffService.archiveTariff(tariffId);
+        return ResponseEntity.ok(java.util.Map.of("id", tariffId, "status", "ARCHIVED"));
     }
 
     private TariffCategory normalizeCategory(String raw) {
