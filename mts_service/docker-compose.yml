@@ -23,7 +23,7 @@ services:
     depends_on:
       - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
@@ -37,7 +37,7 @@ services:
     depends_on:
       - db
     environment:
-      FLYWAY_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}
+      FLYWAY_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
       FLYWAY_USER: ${POSTGRES_USER:-postgres}
       FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
