@@ -15,37 +15,37 @@ INSERT INTO services (name, price, description) VALUES
     ('Облачное хранилище 100 ГБ', 79.00, 'Хранение и синхронизация файлов в облаке');
 
 -- HOME tariffs (price varies by city via tariff_city_prices)
-INSERT INTO tariffs (name, category, status, description, speed_mbps, tv_channels) VALUES
-    ('Домашний Лайт', 'HOME', 'ACTIVE', 'Быстрый интернет и базовый пакет ТВ', 100, 120),
-    ('Домашний Плюс', 'HOME', 'ACTIVE', 'Высокоскоростной интернет и расширенный пакет ТВ', 300, 200),
-    ('Домашний Макс', 'HOME', 'ACTIVE', 'Максимальная скорость и полный пакет ТВ', 1000, 300);
+INSERT INTO tariffs (name, category, status, description, speed_mbps, tv_channels, created_at, updated_at) VALUES
+    ('Домашний Лайт', 'HOME', 'ACTIVE', 'Быстрый интернет и базовый пакет ТВ', 100, 120, NOW(), NOW()),
+    ('Домашний Плюс', 'HOME', 'ACTIVE', 'Высокоскоростной интернет и расширенный пакет ТВ', 300, 200, NOW(), NOW()),
+    ('Домашний Макс', 'HOME', 'ACTIVE', 'Максимальная скорость и полный пакет ТВ', 1000, 300, NOW(), NOW());
 
 -- MOBILE tariffs
-INSERT INTO tariffs (name, category, base_price, status, description, internet_gb, calls_minutes, sms_count, for_family, no_subscription_fee) VALUES
-    ('Мобильный Старт', 'MOBILE', 350.00, 'ACTIVE', 'Базовый мобильный тариф', 5, 300, 100, false, false),
-    ('Мобильный Семья', 'MOBILE', 600.00, 'ACTIVE', 'Выгодный тариф для всей семьи', 20, 1000, 200, true, false),
-    ('Мобильный Без Подписки', 'MOBILE', 0.00, 'ACTIVE', 'Платите только за то, чем пользуетесь', 3, 100, 50, false, true);
+INSERT INTO tariffs (name, category, base_price, status, description, internet_gb, calls_minutes, sms_count, for_family, no_subscription_fee, created_at, updated_at) VALUES
+    ('Мобильный Старт', 'MOBILE', 350.00, 'ACTIVE', 'Базовый мобильный тариф', 5, 300, 100, false, false, NOW(), NOW()),
+    ('Мобильный Семья', 'MOBILE', 600.00, 'ACTIVE', 'Выгодный тариф для всей семьи', 20, 1000, 200, true, false, NOW(), NOW()),
+    ('Мобильный Без Подписки', 'MOBILE', 0.00, 'ACTIVE', 'Платите только за то, чем пользуетесь', 3, 100, 50, false, true, NOW(), NOW());
 
 -- DEVICES tariffs
-INSERT INTO tariffs (name, category, base_price, status, description, internet_gb, device_type) VALUES
-    ('Часы Онлайн', 'DEVICES', 199.00, 'ACTIVE', 'SIM-карта для умных часов', 2, 'WATCH'),
-    ('Модем Стандарт', 'DEVICES', 299.00, 'ACTIVE', 'Мобильный интернет для модема', 30, 'MODEM'),
-    ('Модем Макс', 'DEVICES', 499.00, 'ACTIVE', 'Безлимитный интернет для модема', 100, 'MODEM');
+INSERT INTO tariffs (name, category, base_price, status, description, internet_gb, device_type, created_at, updated_at) VALUES
+    ('Часы Онлайн', 'DEVICES', 199.00, 'ACTIVE', 'SIM-карта для умных часов', 2, 'WATCH', NOW(), NOW()),
+    ('Модем Стандарт', 'DEVICES', 299.00, 'ACTIVE', 'Мобильный интернет для модема', 30, 'MODEM', NOW(), NOW()),
+    ('Модем Макс', 'DEVICES', 499.00, 'ACTIVE', 'Безлимитный интернет для модема', 100, 'MODEM', NOW(), NOW());
 
 -- LANDLINE tariffs (price varies by city)
-INSERT INTO tariffs (name, category, status, description, local_minutes, intercity_minutes, mobile_minutes) VALUES
-    ('Домашний Телефон Базовый', 'LANDLINE', 'ACTIVE', 'Звонки по городу без ограничений', 1000, 60, 30),
-    ('Домашний Телефон Плюс', 'LANDLINE', 'ACTIVE', 'Звонки по городу и межгород', 1000, 300, 100);
+INSERT INTO tariffs (name, category, status, description, local_minutes, intercity_minutes, mobile_minutes, created_at, updated_at) VALUES
+    ('Домашний Телефон Базовый', 'LANDLINE', 'ACTIVE', 'Звонки по городу без ограничений', 1000, 60, 30, NOW(), NOW()),
+    ('Домашний Телефон Плюс', 'LANDLINE', 'ACTIVE', 'Звонки по городу и межгород', 1000, 300, 100, NOW(), NOW());
 
 -- SATELLITE_TV tariffs (price varies by city)
-INSERT INTO tariffs (name, category, status, description, channels_total, channels_hd) VALUES
-    ('Спутник Базовый', 'SATELLITE_TV', 'ACTIVE', 'Базовый пакет спутникового ТВ', 150, 20),
-    ('Спутник Премиум', 'SATELLITE_TV', 'ACTIVE', 'Полный пакет с HD каналами', 300, 80);
+INSERT INTO tariffs (name, category, status, description, channels_total, channels_hd, created_at, updated_at) VALUES
+    ('Спутник Базовый', 'SATELLITE_TV', 'ACTIVE', 'Базовый пакет спутникового ТВ', 150, 20, NOW(), NOW()),
+    ('Спутник Премиум', 'SATELLITE_TV', 'ACTIVE', 'Полный пакет с HD каналами', 300, 80, NOW(), NOW());
 
 -- BUSINESS tariffs
-INSERT INTO tariffs (name, category, base_price, status, description, speed_mbps, sla_description) VALUES
-    ('Бизнес Старт', 'BUSINESS', 1500.00, 'ACTIVE', 'Надёжный интернет для малого бизнеса', 100, 'Восстановление за 8 часов, аптайм 99%'),
-    ('Бизнес Про', 'BUSINESS', 3500.00, 'ACTIVE', 'Корпоративный интернет с гарантированной скоростью', 500, 'Восстановление за 4 часа, аптайм 99.9%');
+INSERT INTO tariffs (name, category, base_price, status, description, speed_mbps, sla_description, created_at, updated_at) VALUES
+    ('Бизнес Старт', 'BUSINESS', 1500.00, 'ACTIVE', 'Надёжный интернет для малого бизнеса', 100, 'Восстановление за 8 часов, аптайм 99%', NOW(), NOW()),
+    ('Бизнес Про', 'BUSINESS', 3500.00, 'ACTIVE', 'Корпоративный интернет с гарантированной скоростью', 500, 'Восстановление за 4 часа, аптайм 99.9%', NOW(), NOW());
 
 -- Tariff-service bindings (HOME Лайт gets антивирус + родительский контроль)
 INSERT INTO tariff_services (tariff_id, service_id)

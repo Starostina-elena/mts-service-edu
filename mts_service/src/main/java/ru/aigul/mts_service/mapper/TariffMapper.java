@@ -24,7 +24,7 @@ public class TariffMapper {
     public TariffMobileCardDto toMobileCard(Tariff t) {
         return new TariffMobileCardDto(t.getId(), t.getName(), t.getBasePrice(),
                 t.getInternetGb(), t.getCallsMinutes(), t.getSmsCount(),
-                t.getForFamily(), t.getNoSubscriptionFee());
+                t.isForFamily(), t.isNoSubscriptionFee());
     }
 
     public TariffDeviceCardDto toDeviceCard(Tariff t) {
@@ -60,7 +60,7 @@ public class TariffMapper {
                 t.getId(), t.getName(), t.getCategory(), effectivePrice, t.getDescription(),
                 t.getSpeedMbps(), t.getTvChannels(), services,
                 t.getInternetGb(), t.getCallsMinutes(), t.getSmsCount(),
-                t.getForFamily(), t.getNoSubscriptionFee(),
+                t.isForFamily(), t.isNoSubscriptionFee(),
                 t.getDeviceType(),
                 t.getLocalMinutes(), t.getIntercityMinutes(), t.getMobileMinutes(),
                 t.getChannelsTotal(), t.getChannelsHd(),

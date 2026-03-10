@@ -30,7 +30,6 @@ public class CatalogService {
     private final CityMapper cityMapper;
     private final ServiceMapper serviceMapper;
 
-    // --- Вкладки каталога ---
 
     public CatalogPageDto<TariffHomeCardDto> getHome(Long cityId, BigDecimal priceMax, Long after, int limit) {
         List<Tariff> raw = tariffRepository.findHome(cityId, priceMax, after, PageRequest.of(0, limit + 1));
@@ -70,16 +69,12 @@ public class CatalogService {
         return toPage(raw, limit, tariffMapper::toBusinessCard);
     }
 
-    // --- Детальная карточка ---
-
     public TariffDetailDto getTariff(Long tariffId) {
         Tariff tariff = tariffRepository.findById(tariffId)
                 .orElseThrow(() -> new TariffNotFoundException(tariffId));
-        BigDecimal cityPrice = null; // для детальной карточки без city-контекста возвращаем null → basePrice
+        BigDecimal cityPrice = null; // для детальной карточки без city-контекста возвращаем null -> basePrice
         return tariffMapper.toDetail(tariff, cityPrice);
     }
-
-    // --- Справочники ---
 
     public List<CityDto> getCities() {
         return cityRepository.findAll().stream().map(cityMapper::toDto).toList();
@@ -88,8 +83,6 @@ public class CatalogService {
     public List<ServiceDto> getServices() {
         return serviceRepository.findAll().stream().map(serviceMapper::toDto).toList();
     }
-
-    // --- Вспомогательные методы ---
 
     private Map<Long, BigDecimal> cityPriceMap(List<Tariff> tariffs, Long cityId) {
         List<Long> ids = tariffs.stream().map(Tariff::getId).toList();
