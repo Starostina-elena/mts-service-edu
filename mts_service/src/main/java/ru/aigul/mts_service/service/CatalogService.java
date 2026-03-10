@@ -15,13 +15,14 @@ import ru.aigul.mts_service.repository.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CatalogService {
-
+мо
     private final TariffRepository tariffRepository;
     private final TariffCityPriceRepository tariffCityPriceRepository;
     private final CityRepository cityRepository;
@@ -72,8 +73,7 @@ public class CatalogService {
     public TariffDetailDto getTariff(Long tariffId) {
         Tariff tariff = tariffRepository.findById(tariffId)
                 .orElseThrow(() -> new TariffNotFoundException(tariffId));
-        BigDecimal cityPrice = null; // для детальной карточки без city-контекста возвращаем null -> basePrice
-        return tariffMapper.toDetail(tariff, cityPrice);
+        return tariffMapper.toDetail(tariff, Optional.empty());
     }
 
     public List<CityDto> getCities() {
@@ -99,6 +99,6 @@ public class CatalogService {
     }
 
     private long cursorOrZero(Long after) {
-        return after != null ? after : 0L;
+        return Optional.ofNullable(after).orElse(0L);
     }
 }

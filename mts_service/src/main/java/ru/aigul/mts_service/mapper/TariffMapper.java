@@ -7,6 +7,7 @@ import ru.aigul.mts_service.model.Tariff;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -50,12 +51,11 @@ public class TariffMapper {
                 t.getSpeedMbps(), t.getSlaDescription(), services);
     }
 
-    public TariffDetailDto toDetail(Tariff t, BigDecimal cityPrice) {
+    public TariffDetailDto toDetail(Tariff t, Optional<BigDecimal> cityPrice) {
         List<ServiceDto> services = t.getServices().stream()
                 .map(serviceMapper::toDto)
                 .toList();
-        // cityPrice используется для HOME/LANDLINE/SATELLITE_TV; для остальных — basePrice
-        BigDecimal effectivePrice = cityPrice != null ? cityPrice : t.getBasePrice();
+        BigDecimal effectivePrice = cityPrice.orElseGet(t::getBasePrice);
         return new TariffDetailDto(
                 t.getId(), t.getName(), t.getCategory(), effectivePrice, t.getDescription(),
                 t.getSpeedMbps(), t.getTvChannels(), services,
