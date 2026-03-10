@@ -23,11 +23,27 @@ public class MockAuthenticationFilter extends OncePerRequestFilter {
             mockUser = "mock@local";
         }
 
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                mockUser,
-                null,
-                List.of(new SimpleGrantedAuthority("USER"))
-        );
+        UsernamePasswordAuthenticationToken auth;
+        if (mockUser.equals("manager@local")) {
+            auth = new UsernamePasswordAuthenticationToken(
+                    mockUser,
+                    null,
+                    List.of(new SimpleGrantedAuthority("MANAGER"))
+            );
+        } else if (mockUser.equals("admin@local")) {
+            auth = new UsernamePasswordAuthenticationToken(
+                    mockUser,
+                    null,
+                    List.of(new SimpleGrantedAuthority("ADMIN"))
+            );
+        } else {
+            auth = new UsernamePasswordAuthenticationToken(
+                    mockUser,
+                    null,
+                    List.of(new SimpleGrantedAuthority("USER"))
+            );
+        }
+
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         filterChain.doFilter(request, response);
