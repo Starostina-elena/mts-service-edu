@@ -15,6 +15,7 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'device_type_enum') THEN
         CREATE TYPE device_type_enum AS ENUM ('WATCH','MODEM');
+
     END IF;
 END$$;
 
