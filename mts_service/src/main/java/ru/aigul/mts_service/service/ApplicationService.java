@@ -8,6 +8,7 @@ import ru.aigul.mts_service.api.dto.application.*;
 import ru.aigul.mts_service.exception.ApplicationNotFoundException;
 import ru.aigul.mts_service.exception.InsufficientFundsException;
 import ru.aigul.mts_service.exception.InvalidApplicationStatusException;
+import ru.aigul.mts_service.exception.AccessDeniedException;
 import ru.aigul.mts_service.exception.TariffNotFoundException;
 import ru.aigul.mts_service.exception.UserNotFoundException;
 import ru.aigul.mts_service.mapper.ApplicationMapper;
@@ -24,6 +25,7 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final TariffRepository tariffRepository;
+    private final TariffCityPriceRepository tariffCityPriceRepository;
     private final UserRepository userRepository;
     private final BalanceRepository balanceRepository;
     private final ServiceRepository serviceRepository;
@@ -37,7 +39,17 @@ public class ApplicationService {
         Tariff tariff = tariffRepository.findById(dto.getTariffId())
                 .orElseThrow(() -> new TariffNotFoundException(dto.getTariffId()));
 
-        BigDecimal totalPrice = tariff.getBasePrice();
+        BigDecimal tariffPrice = tariff.getBasePrice();
+        if (tariffPrice == null && dto.getCityId() != null) {
+            tariffPrice = tariffCityPriceRepository
+                    .findByTariffIdAndCityId(dto.getTariffId(), dto.getCityId())
+                    .map(TariffCityPrice::getPrice)
+                    .orElse(BigDecimal.ZERO);
+        }
+        if (tariffPrice == null) {
+            tariffPrice = BigDecimal.ZERO;
+        }
+        BigDecimal totalPrice = tariffPrice;
 
         List<ru.aigul.mts_service.model.Service> additionalServices = List.of();
         if (!dto.getAdditionalServiceIds().isEmpty()) {
@@ -81,7 +93,13 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationDto approve(Long applicationId) {
+    public ApplicationDto approve(Long userId, Long applicationId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        if (user.getRole() != Role.MANAGER) {
+            throw new AccessDeniedException("Only manager can approve applications");
+        }
+
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
 
@@ -95,7 +113,13 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationDto reject(Long applicationId, ApplicationRejectDto dto) {
+    public ApplicationDto reject(Long userId, Long applicationId, ApplicationRejectDto dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+        if (user.getRole() != Role.MANAGER) {
+            throw new AccessDeniedException("Only manager can reject applications");
+        }
+
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
 

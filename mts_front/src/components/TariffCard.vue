@@ -1,15 +1,27 @@
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '@/auth/useAuth'
 import { archiveTariff } from '@/api/admin'
 
-defineProps({
+const props = defineProps({
   tariff: Object,
   category: String,
 })
 const emit = defineEmits(['details', 'archived'])
 
-const { isAdmin } = useAuth()
+const router = useRouter()
+const { isAdmin, isManager, isLoggedIn, role } = useAuth()
+
+const isUser = ref(role.value === 'USER')
+
+function doConnect() {
+  if (!isLoggedIn.value) {
+    router.push({ name: 'login', query: { redirect: `/tariff/${props.tariff.id}/connect` } })
+    return
+  }
+  router.push({ name: 'tariff-connect', params: { id: props.tariff.id } })
+}
 const archiving = ref(false)
 const archiveError = ref(null)
 
@@ -88,7 +100,13 @@ function formatPrice(p) {
       <div v-if="archiveError" class="card__archive-error">{{ archiveError }}</div>
       <div class="card__actions">
         <button class="btn btn--primary" @click="emit('details', tariff.id)">Подробнее</button>
-        <button class="btn btn--secondary">Подключить</button>
+        <button
+          v-if="!isAdmin && !isManager"
+          class="btn btn--secondary"
+          @click="doConnect"
+        >
+          Подключить
+        </button>
       </div>
       <button
         v-if="isAdmin"

@@ -26,6 +26,36 @@ const routes = [
     component: () => import('@/views/ServiceCreateView.vue'),
     meta: { requiresAuth: true, roles: ['ADMIN'] },
   },
+  {
+    path: '/tariff/:id/connect',
+    name: 'tariff-connect',
+    component: () => import('@/views/TariffConnectView.vue'),
+    meta: { requiresAuth: true, roles: ['USER'] },
+  },
+  {
+    path: '/my-applications',
+    name: 'my-applications',
+    component: () => import('@/views/MyApplicationsView.vue'),
+    meta: { requiresAuth: true, roles: ['USER'] },
+  },
+  {
+    path: '/my-applications/:id',
+    name: 'my-application-detail',
+    component: () => import('@/views/MyApplicationDetailView.vue'),
+    meta: { requiresAuth: true, roles: ['USER'] },
+  },
+  {
+    path: '/applications',
+    name: 'applications',
+    component: () => import('@/views/ApplicationsView.vue'),
+    meta: { requiresAuth: true, roles: ['MANAGER', 'ADMIN'] },
+  },
+  {
+    path: '/applications/:id',
+    name: 'application-detail',
+    component: () => import('@/views/ApplicationDetailView.vue'),
+    meta: { requiresAuth: true, roles: ['MANAGER', 'ADMIN'] },
+  },
 ]
 
 const router = createRouter({

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { fetchTariffDetail } from '@/api/catalog'
 import { archiveTariff } from '@/api/admin'
 import { useAuth } from '@/auth/useAuth'
@@ -10,7 +11,18 @@ const props = defineProps({
 })
 const emit = defineEmits(['close', 'archived'])
 
-const { isAdmin } = useAuth()
+const router = useRouter()
+const { isAdmin, isManager, isLoggedIn } = useAuth()
+
+function doConnect() {
+  emit('close')
+  if (!isLoggedIn.value) {
+    const connectUrl = `/tariff/${props.tariffId}/connect` + (props.cityId ? `?cityId=${props.cityId}` : '')
+    router.push({ name: 'login', query: { redirect: connectUrl } })
+    return
+  }
+  router.push({ name: 'tariff-connect', params: { id: props.tariffId }, query: props.cityId ? { cityId: props.cityId } : {} })
+}
 const detail = ref(null)
 const loading = ref(false)
 const error = ref(null)
@@ -93,7 +105,13 @@ async function doArchive() {
           </div>
         </div>
 
-        <button class="btn btn--primary btn--wide">Подключить</button>
+        <button
+          v-if="!isAdmin && !isManager"
+          class="btn btn--primary btn--wide"
+          @click="doConnect"
+        >
+          Подключить
+        </button>
 
         <div v-if="archiveError" class="modal__archive-error">{{ archiveError }}</div>
         <button

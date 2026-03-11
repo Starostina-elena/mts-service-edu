@@ -2,7 +2,7 @@
 import { useAuth } from '@/auth/useAuth'
 import { useRouter } from 'vue-router'
 
-const { currentUser, isLoggedIn, isAdmin, logout } = useAuth()
+const { currentUser, isLoggedIn, isAdmin, isManager, logout } = useAuth()
 const router = useRouter()
 
 function doLogout() {
@@ -20,6 +20,12 @@ function doLogout() {
 
       <nav class="header__nav">
         <router-link to="/" class="header__link">Каталог</router-link>
+        <template v-if="isLoggedIn && !isAdmin && !isManager">
+          <router-link to="/my-applications" class="header__link">Мои заявки</router-link>
+        </template>
+        <template v-if="isManager || isAdmin">
+          <router-link to="/applications" class="header__link">Заявки</router-link>
+        </template>
         <template v-if="isAdmin">
           <router-link to="/admin/tariffs/new" class="header__link">Создать тариф</router-link>
           <router-link to="/admin/services/new" class="header__link">Создать услугу</router-link>

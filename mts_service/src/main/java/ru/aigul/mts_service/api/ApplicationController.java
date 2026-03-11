@@ -38,13 +38,15 @@ ApplicationController {
     }
 
     @PostMapping("/{applicationId}/approve")
-    public ResponseEntity<ApplicationDto> approve(@PathVariable Long applicationId) {
-        return ResponseEntity.ok(applicationService.approve(applicationId));
+    public ResponseEntity<ApplicationDto> approve(@RequestHeader("X-User-Id") Long userId,
+                                                   @PathVariable Long applicationId) {
+        return ResponseEntity.ok(applicationService.approve(userId, applicationId));
     }
 
     @PostMapping("/{applicationId}/reject")
-    public ResponseEntity<ApplicationDto> reject(@PathVariable Long applicationId,
-                                                 @Valid @RequestBody ApplicationRejectDto dto) {
-        return ResponseEntity.ok(applicationService.reject(applicationId, dto));
+    public ResponseEntity<ApplicationDto> reject(@RequestHeader("X-User-Id") Long userId,
+                                                  @PathVariable Long applicationId,
+                                                  @Valid @RequestBody ApplicationRejectDto dto) {
+        return ResponseEntity.ok(applicationService.reject(userId, applicationId, dto));
     }
 }

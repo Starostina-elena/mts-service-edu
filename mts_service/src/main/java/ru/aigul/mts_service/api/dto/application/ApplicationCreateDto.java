@@ -20,5 +20,7 @@ public class ApplicationCreateDto {
     @Size(max = 500)
     private String address;
 
+    private Long cityId;
+
     private List<Long> additionalServiceIds = List.of();
 }
