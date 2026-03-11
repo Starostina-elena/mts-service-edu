@@ -39,8 +39,8 @@ public class CatalogService {
     }
 
     public CatalogPageDto<TariffMobileCardDto> getMobile(Integer internetGb, Integer callsMinutes,
-                                                          Boolean forFamily, Boolean noSubscriptionFee,
-                                                          Long after, int limit) {
+                                                         Boolean forFamily, Boolean noSubscriptionFee,
+                                                         Long after, int limit) {
         List<Tariff> raw = tariffRepository.findMobile(internetGb, callsMinutes, forFamily, noSubscriptionFee,
                 after, PageRequest.of(0, limit + 1));
         return toPage(raw, limit, tariffMapper::toMobileCard);
