@@ -8,6 +8,6 @@ import ru.aigul.mts_service.model.City;
 public class CityMapper {
 
     public CityDto toDto(City city) {
-        return new CityDto(city.getId(), city.getName(), city.getRegion());
+        return new CityDto(city.getId(), city.getCode(), city.getName(), city.getRegion());
     }
 }
