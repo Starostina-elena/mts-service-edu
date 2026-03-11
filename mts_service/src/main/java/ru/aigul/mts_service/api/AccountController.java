@@ -12,11 +12,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.aigul.mts_service.api.dto.ApplicationResponse;
 import ru.aigul.mts_service.api.dto.BalanceResponse;
+import ru.aigul.mts_service.api.dto.CheckFeasibilityRequest;
+import ru.aigul.mts_service.api.dto.CheckFeasibilityResponse;
 import ru.aigul.mts_service.api.dto.PaymentResponse;
 import ru.aigul.mts_service.api.dto.TopUpRequest;
 import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.service.ApplicationService;
 import ru.aigul.mts_service.service.BalanceService;
+import ru.aigul.mts_service.service.TechnicalFeasibilityService;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -33,6 +36,7 @@ public class AccountController {
 
     private final ApplicationService applicationService;
     private final BalanceService balanceService;
+    private final TechnicalFeasibilityService technicalFeasibilityService;
 
     @GetMapping("/applications")
     public ResponseEntity<List<ApplicationResponse>> getMyApplications(Authentication authentication) {
@@ -68,6 +72,16 @@ public class AccountController {
         }
 
         return ResponseEntity.ok(paymentOpt.get());
+    }
+
+    @PostMapping(path = "/check-technical-feasibility", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CheckFeasibilityResponse> checkTechnicalFeasibility(Authentication authentication, @Valid @RequestBody CheckFeasibilityRequest req) {
+        TechnicalFeasibilityService.Result result = technicalFeasibilityService.check(req.getAddress(), req.getTariff_id());
+        CheckFeasibilityResponse resp = new CheckFeasibilityResponse(result.feasible(), result.reason());
+        if (!result.feasible()) {
+            return ResponseEntity.unprocessableEntity().body(resp);
+        }
+        return ResponseEntity.ok(resp);
     }
 
     private String extractEmailFromPrincipal(Object principal) {
