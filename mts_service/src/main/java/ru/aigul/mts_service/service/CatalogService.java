@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CatalogService {
-мо
+
     private final TariffRepository tariffRepository;
     private final TariffCityPriceRepository tariffCityPriceRepository;
     private final CityRepository cityRepository;
