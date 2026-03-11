@@ -763,6 +763,33 @@ paths:
         '422':
           description: Ошибка подключения
 
+  /admin/services:
+    post:
+      tags: [tariffs]
+      summary: Создать дополнительную услугу
+      description: Создаёт запись в справочнике дополнительных услуг.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreate'
+      responses:
+        '201':
+          description: Услуга создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "123"
+        '422':
+          description: Ошибка валидации
+
 
 components:
   securitySchemes:
@@ -1149,6 +1176,21 @@ components:
         description:
           type: string
 
+    ServiceCreate:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          example: "Антивирус"
+        price:
+          type: number
+          minimum: 0
+          example: 99.00
+        description:
+          type: string
+          nullable: true
+
     # ── ЗАЯВКИ ────────────────────────────────────────────
 
     ApplicationCreate:
@@ -1267,4 +1309,5 @@ components:
         created_at:
           type: string
           format: date-time
+
 
