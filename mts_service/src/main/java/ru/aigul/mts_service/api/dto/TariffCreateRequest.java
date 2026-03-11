@@ -1,34 +1,47 @@
 package ru.aigul.mts_service.api.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import ru.aigul.mts_service.model.DeviceType;
-import ru.aigul.mts_service.model.TariffCategory;
-import ru.aigul.mts_service.model.TariffStatus;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
 public class TariffCreateRequest {
+    @NotBlank
     private String name;
+
+    @NotBlank
     private String category;
+
+    @NotNull
+    @DecimalMin(value = "0.01")
     private BigDecimal price;
+
     private String description;
 
     // home, business
     private Integer speed_mbps;
     private Integer tv_channels;
-    private List<String> service_ids;
+
+    @Valid
+    private List<String> service_ids = new ArrayList<>();
 
     // city prices
-    private List<CityPriceDto> city_prices;
+    @Valid
+    private List<CityPriceDto> city_prices = new ArrayList<>();
 
     // mobile
     private Integer internet_gb;
     private Integer calls_minutes;
     private Integer sms_count;
-    private Boolean for_family;
-    private Boolean no_subscription_fee;
+    private Boolean for_family = Boolean.FALSE;
+    private Boolean no_subscription_fee = Boolean.FALSE;
 
     // devices
     private DeviceType device_type;
@@ -47,8 +60,11 @@ public class TariffCreateRequest {
 
     @Data
     public static class CityPriceDto {
+        @NotBlank
         private String city_id;
+
+        @NotNull
+        @DecimalMin(value = "0.01")
         private BigDecimal price;
     }
 }
-
