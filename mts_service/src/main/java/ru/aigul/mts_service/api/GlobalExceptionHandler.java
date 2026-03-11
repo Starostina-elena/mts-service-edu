@@ -1,12 +1,16 @@
 package ru.aigul.mts_service.api;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import jakarta.validation.ConstraintViolationException;
-import java.util.HashMap;
+import ru.aigul.mts_service.api.dto.ErrorResponse;
+
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -22,10 +26,8 @@ public class GlobalExceptionHandler {
                         (a, b) -> a + "; " + b
                 ));
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("message", "validation failed");
-        body.put("errors", errors);
-        return ResponseEntity.status(422).body(body);
+        ErrorResponse resp = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, "validation failed", errors, OffsetDateTime.now(ZoneOffset.UTC));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resp);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -36,16 +38,13 @@ public class GlobalExceptionHandler {
                         v -> v.getMessage(),
                         (a, b) -> a + "; " + b
                 ));
-        Map<String, Object> body = new HashMap<>();
-        body.put("message", "validation failed");
-        body.put("errors", errors);
-        return ResponseEntity.status(422).body(body);
+        ErrorResponse resp = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, "validation failed", errors, OffsetDateTime.now(ZoneOffset.UTC));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resp);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("message", ex.getMessage() != null ? ex.getMessage() : "invalid request");
-        return ResponseEntity.status(422).body(body);
+        ErrorResponse resp = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage() != null ? ex.getMessage() : "invalid request", Map.of(), OffsetDateTime.now(ZoneOffset.UTC));
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resp);
     }
 }

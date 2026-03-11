@@ -1,8 +1,6 @@
 package ru.aigul.mts_service.api.dto;
 
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -14,8 +12,6 @@ public class UserResponse {
     private String role;
     private LocalDateTime createdAt;
 
-    private String error;
-
     public UserResponse() {}
 
     public UserResponse(Long id, String email, String name, String role, LocalDateTime createdAt) {
@@ -24,9 +20,5 @@ public class UserResponse {
         this.name = name;
         this.role = role;
         this.createdAt = createdAt;
-    }
-
-    public UserResponse(String error) {
-        this.error = error;
     }
 }

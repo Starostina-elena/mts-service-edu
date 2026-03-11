@@ -22,7 +22,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserCreateRequest req) {
-        User created = userService.createUser(req);
+        User created = userService.createUser(req.getEmail(), req.getName(), req.getPassword());
         UserResponse resp = new UserResponse(
                 created.getId(),
                 created.getEmail(),
@@ -33,4 +33,3 @@ public class UserController {
         return new ResponseEntity<>(resp, HttpStatus.CREATED);
     }
 }
-
