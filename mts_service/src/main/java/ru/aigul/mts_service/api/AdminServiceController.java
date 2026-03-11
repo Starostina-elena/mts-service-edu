@@ -2,6 +2,7 @@ package ru.aigul.mts_service.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +21,6 @@ public class AdminServiceController {
     @PostMapping("/services")
     public ResponseEntity<?> createService(@Valid @RequestBody ServiceCreateRequest req) {
         long id = adminService.createService(req.getName(), req.getPrice(), req.getDescription());
-        return ResponseEntity.status(201).body(java.util.Map.of("id", id));
+        return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("id", id));
     }
 }
