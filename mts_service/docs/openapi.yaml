@@ -419,7 +419,7 @@ paths:
   /applications/{applicationId}/approve:
     post:
       tags: [applications]
-      summary: Одобрить заявку (Администратор)
+      summary: Одобрить заявку (Менеджер)
       security:
         - bearerAuth: []
       parameters:
@@ -437,7 +437,7 @@ paths:
   /applications/{applicationId}/reject:
     post:
       tags: [applications]
-      summary: Отклонить заявку (Администратор)
+      summary: Отклонить заявку (Менеджер)
       security:
         - bearerAuth: []
       parameters:

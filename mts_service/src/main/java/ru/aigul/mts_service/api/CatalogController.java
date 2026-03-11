@@ -66,8 +66,9 @@ public class CatalogController {
     }
 
     @GetMapping("/tariffs/{tariffId}")
-    public TariffDetailDto getTariff(@PathVariable Long tariffId) {
-        return catalogService.getTariff(tariffId);
+    public TariffDetailDto getTariff(@PathVariable Long tariffId,
+                                     @RequestParam(required = false) Long cityId) {
+        return catalogService.getTariff(tariffId, cityId);
     }
 
     @GetMapping("/cities")

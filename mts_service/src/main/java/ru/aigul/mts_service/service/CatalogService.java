@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CatalogService {
-мо
+
     private final TariffRepository tariffRepository;
     private final TariffCityPriceRepository tariffCityPriceRepository;
     private final CityRepository cityRepository;
@@ -70,10 +70,15 @@ public class CatalogService {
         return toPage(raw, limit, tariffMapper::toBusinessCard);
     }
 
-    public TariffDetailDto getTariff(Long tariffId) {
+    public TariffDetailDto getTariff(Long tariffId, Long cityId) {
         Tariff tariff = tariffRepository.findById(tariffId)
                 .orElseThrow(() -> new TariffNotFoundException(tariffId));
-        return tariffMapper.toDetail(tariff, Optional.empty());
+        Optional<BigDecimal> cityPrice = Optional.empty();
+        if (cityId != null) {
+            cityPrice = tariffCityPriceRepository.findByTariffIdAndCityId(tariffId, cityId)
+                    .map(TariffCityPrice::getPrice);
+        }
+        return tariffMapper.toDetail(tariff, cityPrice);
     }
 
     public List<CityDto> getCities() {
