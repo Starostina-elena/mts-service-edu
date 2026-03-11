@@ -1,5 +1,6 @@
 package ru.aigul.mts_service.api;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,12 +18,8 @@ public class AdminServiceController {
     private final AdminService adminService;
 
     @PostMapping("/services")
-    public ResponseEntity<?> createService(@RequestBody ServiceCreateRequest req) {
-        if (req.getName() == null || req.getName().isBlank() || req.getPrice() == null) {
-            return ResponseEntity.unprocessableEntity().body("name and price are required");
-        }
+    public ResponseEntity<?> createService(@Valid @RequestBody ServiceCreateRequest req) {
         long id = adminService.createService(req.getName(), req.getPrice(), req.getDescription());
         return ResponseEntity.status(201).body(java.util.Map.of("id", id));
     }
 }
-

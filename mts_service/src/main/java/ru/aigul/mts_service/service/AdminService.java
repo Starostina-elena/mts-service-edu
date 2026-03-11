@@ -15,7 +15,7 @@ public class AdminService {
         ru.aigul.mts_service.model.Service s = new ru.aigul.mts_service.model.Service();
         s.setName(name);
         s.setPrice(price);
-        s.setDescription(description != null ? description : "");
+        s.setDescription(description);
         ru.aigul.mts_service.model.Service saved = serviceRepository.save(s);
         return saved.getId() != null ? saved.getId() : -1L;
     }
