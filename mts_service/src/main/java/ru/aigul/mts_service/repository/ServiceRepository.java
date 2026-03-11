@@ -5,4 +5,3 @@ import ru.aigul.mts_service.model.Service;
 
 public interface ServiceRepository extends JpaRepository<Service, Long> {
 }
-

@@ -62,11 +62,11 @@ public class Tariff {
     @Column(name = "sms_count")
     private Integer smsCount;
 
-    @Column(name = "for_family")
-    private Boolean forFamily = false;
+    @Column(name = "for_family", nullable = false)
+    private boolean forFamily = false;
 
-    @Column(name = "no_subscription_fee")
-    private Boolean noSubscriptionFee = false;
+    @Column(name = "no_subscription_fee", nullable = false)
+    private boolean noSubscriptionFee = false;
 
     // Поля для DEVICES
     @Enumerated(EnumType.STRING)

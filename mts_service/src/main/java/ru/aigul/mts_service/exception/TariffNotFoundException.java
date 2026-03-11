@@ -9,4 +9,3 @@ public class TariffNotFoundException extends RuntimeException {
         super("Tariff not found: " + id);
     }
 }
-

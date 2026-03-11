@@ -6,6 +6,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import ru.aigul.mts_service.exception.TariffNotFoundException;
+
 import jakarta.validation.ConstraintViolationException;
 import ru.aigul.mts_service.api.dto.ErrorResponse;
 
@@ -14,7 +21,7 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -47,4 +54,17 @@ public class GlobalExceptionHandler {
         ErrorResponse resp = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage() != null ? ex.getMessage() : "invalid request", Map.of(), OffsetDateTime.now(ZoneOffset.UTC));
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resp);
     }
+  
+  @ExceptionHandler(TariffNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleNotFound(TariffNotFoundException ex) {
+        return Map.of("error", ex.getMessage());
+    }
+
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBadRequest(Exception ex) {
+        return Map.of("error", ex.getMessage());
+    }
 }
+
