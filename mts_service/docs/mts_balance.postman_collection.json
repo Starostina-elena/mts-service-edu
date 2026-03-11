@@ -1,0 +1,98 @@
+{
+  "info": {
+    "name": "MTS Service - Account & Balance",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Коллекция для тестирования /account endpoints: applications, balance, balance/top-up, check-technical-feasibility. Используйте переменную {{baseUrl}} (default http://localhost:8080) и заголовок X-Mock-User для мок‑аутентификации (см. MockAuthenticationFilter)."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "mockUser",
+      "value": "mock@local",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get my applications",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "X-Mock-User", "value": "{{mockUser}}", "description": "mock user header (mock@local / manager@local / admin@local)" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/account/applications",
+          "host": ["{{baseUrl}}"],
+          "path": ["account","applications"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get my balance",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "X-Mock-User", "value": "{{mockUser}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/account/balance",
+          "host": ["{{baseUrl}}"],
+          "path": ["account","balance"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Initiate top-up (create payment link)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Mock-User", "value": "{{mockUser}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"amount\": 500.00,\n  \"return_url\": \"http://localhost:3000/pay-return\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/account/balance/top-up",
+          "host": ["{{baseUrl}}"],
+          "path": ["account","balance","top-up"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Check technical feasibility",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Mock-User", "value": "{{mockUser}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"address\": \"ул. Ленина, дом 10, кв 5\",\n  \"tariff_id\": \"1\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/account/check-technical-feasibility",
+          "host": ["{{baseUrl}}"],
+          "path": ["account","check-technical-feasibility"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
+
