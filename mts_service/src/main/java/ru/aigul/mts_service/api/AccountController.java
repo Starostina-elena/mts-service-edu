@@ -16,7 +16,9 @@ import ru.aigul.mts_service.api.dto.CheckFeasibilityRequest;
 import ru.aigul.mts_service.api.dto.CheckFeasibilityResponse;
 import ru.aigul.mts_service.api.dto.PaymentResponse;
 import ru.aigul.mts_service.api.dto.TopUpRequest;
+import ru.aigul.mts_service.api.mapper.ApplicationMapper;
 import ru.aigul.mts_service.model.Balance;
+import ru.aigul.mts_service.model.Application;
 import ru.aigul.mts_service.service.ApplicationService;
 import ru.aigul.mts_service.service.BalanceService;
 import ru.aigul.mts_service.service.TechnicalFeasibilityService;
@@ -26,6 +28,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import jakarta.validation.Valid;
 
@@ -37,12 +40,14 @@ public class AccountController {
     private final ApplicationService applicationService;
     private final BalanceService balanceService;
     private final TechnicalFeasibilityService technicalFeasibilityService;
+    private final ApplicationMapper applicationMapper;
 
     @GetMapping("/applications")
     public ResponseEntity<List<ApplicationResponse>> getMyApplications(Authentication authentication) {
         String email = extractEmailFromPrincipal(authentication.getPrincipal());
-        List<ApplicationResponse> apps = applicationService.getApplicationsForUserEmail(email);
-        return ResponseEntity.ok(apps);
+        List<Application> apps = applicationService.getApplicationsForUserEmail(email);
+        List<ApplicationResponse> dto = apps.stream().map(applicationMapper::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/balance")
@@ -65,13 +70,14 @@ public class AccountController {
     @PostMapping(path = "/balance/top-up", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PaymentResponse> topUpBalance(Authentication authentication, @Valid @RequestBody TopUpRequest req) {
         String email = extractEmailFromPrincipal(authentication.getPrincipal());
-        Optional<PaymentResponse> paymentOpt = balanceService.createTopUpPayment(email, req.getAmount());
+        Optional<String> paymentUrlOpt = balanceService.createTopUpPayment(email, req.getAmount());
 
-        if (paymentOpt.isEmpty()) {
+        if (paymentUrlOpt.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(paymentOpt.get());
+        PaymentResponse resp = new PaymentResponse(paymentUrlOpt.get());
+        return ResponseEntity.ok(resp);
     }
 
     @PostMapping(path = "/check-technical-feasibility", consumes = MediaType.APPLICATION_JSON_VALUE)

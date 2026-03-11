@@ -7,6 +7,5 @@ import lombok.Data;
 @AllArgsConstructor
 public class PaymentResponse {
     private String payment_url;
-    private String payment_id;
 }
 

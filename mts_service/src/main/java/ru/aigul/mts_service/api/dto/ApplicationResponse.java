@@ -1,12 +1,10 @@
 package ru.aigul.mts_service.api.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-@Getter
-@Setter
+import java.time.LocalDateTime;
+
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicationResponse {
@@ -17,7 +15,6 @@ public class ApplicationResponse {
     private String address;
     private String status;
     private String reject_reason;
-    private String created_at;
-    private String updated_at;
+    private LocalDateTime created_at;
+    private LocalDateTime updated_at;
 }
-

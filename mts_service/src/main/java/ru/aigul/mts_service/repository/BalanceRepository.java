@@ -6,7 +6,6 @@ import ru.aigul.mts_service.model.Balance;
 
 import java.util.Optional;
 
-@Repository
 public interface BalanceRepository extends JpaRepository<Balance, Long> {
     Optional<Balance> findByUserId(Long userId);
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.aigul.mts_service.api.dto.UserCreateRequest;
 import ru.aigul.mts_service.api.dto.UserResponse;
+import ru.aigul.mts_service.api.mapper.UserMapper;
 import ru.aigul.mts_service.model.User;
 import ru.aigul.mts_service.service.UserService;
 
@@ -19,18 +20,12 @@ import ru.aigul.mts_service.service.UserService;
 public class UserController {
 
     private final UserService userService;
+    private final UserMapper userMapper;
 
     @PostMapping
     public ResponseEntity<UserResponse> createUser(@Valid @RequestBody UserCreateRequest req) {
         User created = userService.createUser(req);
-        UserResponse resp = new UserResponse(
-                created.getId(),
-                created.getEmail(),
-                created.getName(),
-                created.getRole().name(),
-                created.getCreatedAt()
-        );
+        UserResponse resp = userMapper.toDto(created);
         return new ResponseEntity<>(resp, HttpStatus.CREATED);
     }
 }
-
