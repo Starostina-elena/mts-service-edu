@@ -26,10 +26,11 @@ ApplicationController {
 
     @GetMapping
     public ApplicationPageDto list(
+            @RequestParam(required = false) Long userId,
             @RequestParam(required = false) ApplicationStatus status,
             @RequestParam(required = false) Long after,
             @RequestParam(defaultValue = "20") int limit) {
-        return applicationService.list(status, after, limit);
+        return applicationService.list(userId, status, after, limit);
     }
 
     @GetMapping("/{applicationId}")

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/auth/useAuth'
 import { fetchApplications } from '@/api/applications'
@@ -29,25 +29,20 @@ const STATUS_CLASSES = {
 }
 
 const statusFilter = ref('')
-const allApplications = ref([])
+const applications = ref([])
 const nextCursor = ref(null)
 const loading = ref(false)
 const error = ref(null)
-
-const myApplications = computed(() => {
-  if (!currentUser.value) return []
-  return allApplications.value.filter(a => a.userId === currentUser.value.id)
-})
 
 async function load(append = false) {
   loading.value = true
   error.value = null
   try {
-    const opts = { limit: 50 }
+    const opts = { userId: currentUser.value.id, limit: 20 }
     if (statusFilter.value) opts.status = statusFilter.value
     if (append && nextCursor.value) opts.after = nextCursor.value
     const data = await fetchApplications(opts)
-    allApplications.value = append ? [...allApplications.value, ...data.items] : data.items
+    applications.value = append ? [...applications.value, ...data.items] : data.items
     nextCursor.value = data.nextCursor ?? null
   } catch (e) {
     error.value = e.message
@@ -67,7 +62,7 @@ function formatDate(dateStr) {
 }
 
 watch(statusFilter, () => {
-  allApplications.value = []
+  applications.value = []
   nextCursor.value = null
   load()
 })
@@ -94,9 +89,9 @@ load()
 
     <div v-if="error" class="page__error">{{ error }}</div>
 
-    <div v-if="myApplications.length" class="list">
+    <div v-if="applications.length" class="list">
       <div
-        v-for="app in myApplications"
+        v-for="app in applications"
         :key="app.id"
         class="card"
         @click="openDetail(app.id)"
@@ -129,7 +124,7 @@ load()
 
     <div v-if="loading" class="page__loading">Загрузка...</div>
 
-    <div v-if="!loading && !myApplications.length && !error" class="page__empty">
+    <div v-if="!loading && !applications.length && !error" class="page__empty">
       У вас пока нет заявок
     </div>
 

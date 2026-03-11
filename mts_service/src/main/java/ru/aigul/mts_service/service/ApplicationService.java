@@ -77,8 +77,30 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public ApplicationPageDto list(ApplicationStatus status, Long after, int limit) {
-        List<Application> raw = applicationRepository.findAll(status, after, PageRequest.of(0, limit + 1));
+    public ApplicationPageDto list(Long userId, ApplicationStatus status, Long after, int limit) {
+        PageRequest pageRequest = PageRequest.of(0, limit + 1);
+        List<Application> raw;
+        if (userId != null) {
+            if (status != null && after != null) {
+                raw = applicationRepository.findAllByUserAndStatusAfter(userId, status, after, pageRequest);
+            } else if (status != null) {
+                raw = applicationRepository.findAllByUserAndStatus(userId, status, pageRequest);
+            } else if (after != null) {
+                raw = applicationRepository.findAllByUserAfter(userId, after, pageRequest);
+            } else {
+                raw = applicationRepository.findAllByUser(userId, pageRequest);
+            }
+        } else {
+            if (status != null && after != null) {
+                raw = applicationRepository.findAllByStatusAfter(status, after, pageRequest);
+            } else if (status != null) {
+                raw = applicationRepository.findAllByStatus(status, pageRequest);
+            } else if (after != null) {
+                raw = applicationRepository.findAllAfter(after, pageRequest);
+            } else {
+                raw = applicationRepository.findAllOrdered(pageRequest);
+            }
+        }
         boolean hasNext = raw.size() > limit;
         List<Application> page = hasNext ? raw.subList(0, limit) : raw;
         Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;

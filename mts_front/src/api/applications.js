@@ -39,8 +39,8 @@ async function postEmpty(path, headers = {}) {
   return data
 }
 
-export function fetchApplications({ status, after, limit } = {}) {
-  return request('/applications', { status, after, limit })
+export function fetchApplications({ userId, status, after, limit } = {}) {
+  return request('/applications', { userId, status, after, limit })
 }
 
 export function fetchApplicationDetail(applicationId) {
