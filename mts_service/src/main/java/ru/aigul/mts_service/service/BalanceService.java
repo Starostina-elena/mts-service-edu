@@ -1,9 +1,9 @@
 package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.aigul.mts_service.api.dto.BalanceResponse;
-import ru.aigul.mts_service.api.dto.PaymentResponse;
 import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.model.User;
 import ru.aigul.mts_service.repository.BalanceRepository;
@@ -20,6 +20,9 @@ public class BalanceService {
 
     private final UserService userService;
     private final BalanceRepository balanceRepository;
+
+    @Value("${payments.base-url:https://payments.example.com/mock-pay}")
+    private String paymentsBaseUrl;
 
     public Optional<Balance> findBalanceForUserEmail(String email) {
         Optional<User> userOpt = userService.findByEmail(email);
@@ -42,7 +45,11 @@ public class BalanceService {
         }
 
         String paymentId = UUID.randomUUID().toString();
-        String paymentUrl = "https://payments.example.com/mock-pay/" + paymentId;
+        String base = paymentsBaseUrl != null ? paymentsBaseUrl : "https://payments.example.com/mock-pay";
+        if (!base.endsWith("/")) {
+            base = base + "/";
+        }
+        String paymentUrl = base + paymentId;
 
         return Optional.of(paymentUrl);
     }
