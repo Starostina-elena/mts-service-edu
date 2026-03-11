@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd C:/Users/ibraa/project/blps_mts_service/mts_front && npm install 2>&1 | tail -5)",
+      "Bash(cd C:/Users/ibraa/project/blps_mts_service/mts_front && npx vite build 2>&1)",
+      "Read(//c/Users/ibraa/project/blps_mts_service/mts_service/**)",
+      "Bash(./gradlew dependencies:*)"
+    ]
+  }
+}

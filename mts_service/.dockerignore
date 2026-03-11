@@ -1,4 +1,5 @@
 build/
+!build/libs/*.jar
 .gradle/
 .gradle-cache/
 **/node_modules
