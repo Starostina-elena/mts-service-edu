@@ -1,9 +1,43 @@
 <script setup>
-defineProps({
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/auth/useAuth'
+import { archiveTariff } from '@/api/admin'
+
+const props = defineProps({
   tariff: Object,
   category: String,
 })
-const emit = defineEmits(['details'])
+const emit = defineEmits(['details', 'archived'])
+
+const router = useRouter()
+const { isAdmin, isManager, isLoggedIn, role } = useAuth()
+
+const isUser = ref(role.value === 'USER')
+
+function doConnect() {
+  if (!isLoggedIn.value) {
+    router.push({ name: 'login', query: { redirect: `/tariff/${props.tariff.id}/connect` } })
+    return
+  }
+  router.push({ name: 'tariff-connect', params: { id: props.tariff.id } })
+}
+const archiving = ref(false)
+const archiveError = ref(null)
+
+async function doArchive(tariffId) {
+  if (!confirm('Архивировать этот тариф?')) return
+  archiving.value = true
+  archiveError.value = null
+  try {
+    await archiveTariff(tariffId)
+    emit('archived', tariffId)
+  } catch (e) {
+    archiveError.value = e.message
+  } finally {
+    archiving.value = false
+  }
+}
 
 function formatPrice(p) {
   if (p == null) return ''
@@ -63,10 +97,25 @@ function formatPrice(p) {
 
     <div class="card__footer">
       <span class="card__price">{{ formatPrice(tariff.price ?? tariff.basePrice) }}</span>
+      <div v-if="archiveError" class="card__archive-error">{{ archiveError }}</div>
       <div class="card__actions">
-        <button class="btn btn--primary">Подключить</button>
-        <button class="btn btn--secondary" @click="emit('details', tariff.id)">Подробнее</button>
+        <button class="btn btn--primary" @click="emit('details', tariff.id)">Подробнее</button>
+        <button
+          v-if="!isAdmin && !isManager"
+          class="btn btn--secondary"
+          @click="doConnect"
+        >
+          Подключить
+        </button>
       </div>
+      <button
+        v-if="isAdmin"
+        class="btn btn--archive"
+        :disabled="archiving"
+        @click="doArchive(tariff.id)"
+      >
+        {{ archiving ? 'Архивирование...' : 'Архивировать' }}
+      </button>
     </div>
   </div>
 </template>
@@ -135,6 +184,8 @@ function formatPrice(p) {
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
+  flex: 1;
+  text-align: center;
 }
 .btn--primary {
   background: #e00;
@@ -150,5 +201,29 @@ function formatPrice(p) {
 }
 .btn--secondary:hover {
   background: #f5f5f5;
+}
+.btn--archive {
+  width: 100%;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px solid #e00;
+  color: #e00;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 24px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn--archive:hover {
+  background: #fff0f0;
+}
+.btn--archive:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.card__archive-error {
+  color: #c00;
+  font-size: 12px;
+  margin-bottom: 4px;
 }
 </style>

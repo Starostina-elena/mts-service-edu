@@ -64,6 +64,10 @@ function switchTab(key) {
   nextCursor.value = null
 }
 
+function onArchived(tariffId) {
+  tariffs.value = tariffs.value.filter(t => t.id !== tariffId)
+}
+
 watch([activeTab, cityId], () => {
   tariffs.value = []
   nextCursor.value = null
@@ -98,6 +102,7 @@ watch([activeTab, cityId], () => {
         :tariff="t"
         :category="activeTab"
         @details="detailId = $event"
+        @archived="onArchived"
       />
     </div>
 
@@ -120,6 +125,7 @@ watch([activeTab, cityId], () => {
       :tariff-id="detailId"
       :city-id="cityId"
       @close="detailId = null"
+      @archived="onArchived"
     />
   </div>
 </template>

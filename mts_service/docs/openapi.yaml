@@ -394,7 +394,7 @@ paths:
   /applications/{applicationId}/approve:
     post:
       tags: [applications]
-      summary: Одобрить заявку (Администратор)
+      summary: Одобрить заявку (Менеджер)
       security:
         - bearerAuth: []
       parameters:
@@ -412,7 +412,7 @@ paths:
   /applications/{applicationId}/reject:
     post:
       tags: [applications]
-      summary: Отклонить заявку (Администратор)
+      summary: Отклонить заявку (Менеджер)
       security:
         - bearerAuth: []
       parameters:
@@ -737,6 +737,33 @@ paths:
           description: Тариф подключён
         '422':
           description: Ошибка подключения
+
+  /admin/services:
+    post:
+      tags: [tariffs]
+      summary: Создать дополнительную услугу
+      description: Создаёт запись в справочнике дополнительных услуг.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreate'
+      responses:
+        '201':
+          description: Услуга создана
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "123"
+        '422':
+          description: Ошибка валидации
 
 
 components:
@@ -1123,6 +1150,21 @@ components:
           example: 99.00
         description:
           type: string
+
+    ServiceCreate:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          example: "Антивирус"
+        price:
+          type: number
+          minimum: 0
+          example: 99.00
+        description:
+          type: string
+          nullable: true
 
     # ── ЗАЯВКИ ────────────────────────────────────────────
 

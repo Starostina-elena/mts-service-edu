@@ -1,16 +1,33 @@
 <script setup>
 import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { fetchTariffDetail } from '@/api/catalog'
+import { archiveTariff } from '@/api/admin'
+import { useAuth } from '@/auth/useAuth'
 
 const props = defineProps({
   tariffId: Number,
   cityId: Number,
 })
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'archived'])
 
+const router = useRouter()
+const { isAdmin, isManager, isLoggedIn } = useAuth()
+
+function doConnect() {
+  emit('close')
+  if (!isLoggedIn.value) {
+    const connectUrl = `/tariff/${props.tariffId}/connect` + (props.cityId ? `?cityId=${props.cityId}` : '')
+    router.push({ name: 'login', query: { redirect: connectUrl } })
+    return
+  }
+  router.push({ name: 'tariff-connect', params: { id: props.tariffId }, query: props.cityId ? { cityId: props.cityId } : {} })
+}
 const detail = ref(null)
 const loading = ref(false)
 const error = ref(null)
+const archiving = ref(false)
+const archiveError = ref(null)
 
 watch(
   () => props.tariffId,
@@ -32,6 +49,21 @@ watch(
 function formatPrice(p) {
   if (p == null) return ''
   return `${Number(p).toLocaleString('ru-RU')} \u20BD/\u043Cec`
+}
+
+async function doArchive() {
+  if (!confirm('Архивировать этот тариф?')) return
+  archiving.value = true
+  archiveError.value = null
+  try {
+    await archiveTariff(props.tariffId)
+    emit('archived', props.tariffId)
+    emit('close')
+  } catch (e) {
+    archiveError.value = e.message
+  } finally {
+    archiving.value = false
+  }
 }
 </script>
 
@@ -73,7 +105,23 @@ function formatPrice(p) {
           </div>
         </div>
 
-        <button class="btn btn--primary btn--wide">Подключить</button>
+        <button
+          v-if="!isAdmin && !isManager"
+          class="btn btn--primary btn--wide"
+          @click="doConnect"
+        >
+          Подключить
+        </button>
+
+        <div v-if="archiveError" class="modal__archive-error">{{ archiveError }}</div>
+        <button
+          v-if="isAdmin"
+          class="btn btn--archive btn--wide"
+          :disabled="archiving"
+          @click="doArchive"
+        >
+          {{ archiving ? 'Архивирование...' : 'Архивировать тариф' }}
+        </button>
       </template>
     </div>
   </div>
@@ -173,5 +221,24 @@ function formatPrice(p) {
 }
 .btn--primary:hover {
   background: #c00;
+}
+.btn--archive {
+  background: transparent;
+  border: 1px solid #e00;
+  color: #e00;
+  margin-top: 8px;
+}
+.btn--archive:hover {
+  background: #fff0f0;
+}
+.btn--archive:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.modal__archive-error {
+  color: #c00;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 8px;
 }
 </style>
