@@ -39,17 +39,14 @@ public class BalanceService {
             return Optional.empty();
         }
 
-        Optional<User> userOpt = userService.findByEmail(email);
-        if (userOpt.isEmpty()) {
-            return Optional.empty();
-        }
-
         String paymentId = UUID.randomUUID().toString();
         String base = paymentsBaseUrl != null ? paymentsBaseUrl : "https://payments.example.com/mock-pay";
         if (!base.endsWith("/")) {
             base = base + "/";
         }
         String paymentUrl = base + paymentId;
+
+        System.out.println("PaymentUrl: " + paymentUrl);
 
         return Optional.of(paymentUrl);
     }

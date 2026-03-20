@@ -12,20 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.aigul.mts_service.api.dto.ApplicationResponse;
 import ru.aigul.mts_service.api.dto.BalanceResponse;
-import ru.aigul.mts_service.api.dto.CheckFeasibilityRequest;
-import ru.aigul.mts_service.api.dto.CheckFeasibilityResponse;
 import ru.aigul.mts_service.api.dto.PaymentResponse;
 import ru.aigul.mts_service.api.dto.TopUpRequest;
 import ru.aigul.mts_service.api.mapper.ApplicationMapper;
-import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.model.Application;
 import ru.aigul.mts_service.service.ApplicationService;
 import ru.aigul.mts_service.service.BalanceService;
-import ru.aigul.mts_service.service.TechnicalFeasibilityService;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -39,7 +32,6 @@ public class AccountController {
 
     private final ApplicationService applicationService;
     private final BalanceService balanceService;
-    private final TechnicalFeasibilityService technicalFeasibilityService;
     private final ApplicationMapper applicationMapper;
 
     @GetMapping("/applications")
@@ -53,17 +45,7 @@ public class AccountController {
     @GetMapping("/balance")
     public ResponseEntity<BalanceResponse> getMyBalance(Authentication authentication) {
         String email = extractEmailFromPrincipal(authentication.getPrincipal());
-        Optional<Balance> balanceOpt = balanceService.findBalanceForUserEmail(email);
-
-        if (balanceOpt.isEmpty()) {
-            BalanceResponse resp = new BalanceResponse(BigDecimal.ZERO, "RUB", OffsetDateTime.now(ZoneOffset.UTC));
-            return ResponseEntity.ok(resp);
-        }
-
-        Balance b = balanceOpt.get();
-        OffsetDateTime updated = b.getUpdatedAt() != null ? b.getUpdatedAt().atOffset(ZoneOffset.UTC) : OffsetDateTime.now(ZoneOffset.UTC);
-        BigDecimal amount = b.getAmount() != null ? b.getAmount() : BigDecimal.ZERO;
-        BalanceResponse resp = new BalanceResponse(amount, "RUB", updated);
+        BalanceResponse resp = balanceService.getBalanceResponseForUserEmail(email);
         return ResponseEntity.ok(resp);
     }
 
@@ -73,20 +55,11 @@ public class AccountController {
         Optional<String> paymentUrlOpt = balanceService.createTopUpPayment(email, req.getAmount());
 
         if (paymentUrlOpt.isEmpty()) {
+            System.out.println("Payment url is empty");
             return ResponseEntity.badRequest().build();
         }
 
         PaymentResponse resp = new PaymentResponse(paymentUrlOpt.get());
-        return ResponseEntity.ok(resp);
-    }
-
-    @PostMapping(path = "/check-technical-feasibility", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CheckFeasibilityResponse> checkTechnicalFeasibility(Authentication authentication, @Valid @RequestBody CheckFeasibilityRequest req) {
-        TechnicalFeasibilityService.Result result = technicalFeasibilityService.check(req.getAddress(), req.getTariff_id());
-        CheckFeasibilityResponse resp = new CheckFeasibilityResponse(result.feasible(), result.reason());
-        if (!result.feasible()) {
-            return ResponseEntity.unprocessableEntity().body(resp);
-        }
         return ResponseEntity.ok(resp);
     }
 

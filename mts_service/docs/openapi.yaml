@@ -613,45 +613,6 @@ paths:
                   payment_url:
                     type: string
 
-  /account/check-technical-feasibility:
-    post:
-      tags: [balance]
-      summary: Проверить техническую возможность подключения
-      description: |
-        Только для домашних категорий: **home**, **landline**, **satellite_tv**.
-        Для mobile и devices не применимо.
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [address, tariff_id]
-              properties:
-                address:
-                  type: string
-                  example: "г. Москва, ул. Примерная, д. 1, кв. 10"
-                tariff_id:
-                  type: string
-      responses:
-        '200':
-          description: Результат проверки
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  feasible:
-                    type: boolean
-                  reason:
-                    type: string
-                    nullable: true
-                    description: Причина отказа (если feasible = false)
-        '422':
-          description: Тариф не относится к домашним категориям
-
   /admin/tariffs:
     post:
       tags: [tariffs]

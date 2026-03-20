@@ -70,28 +70,6 @@
         }
       },
       "response": []
-    },
-    {
-      "name": "Check technical feasibility",
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Accept", "value": "application/json" },
-          { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Mock-User", "value": "{{mockUser}}" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"address\": \"ул. Ленина, дом 10, кв 5\",\n  \"tariff_id\": \"1\"\n}",
-          "options": { "raw": { "language": "json" } }
-        },
-        "url": {
-          "raw": "{{baseUrl}}/account/check-technical-feasibility",
-          "host": ["{{baseUrl}}"],
-          "path": ["account","check-technical-feasibility"]
-        }
-      },
-      "response": []
     }
   ]
 }
