@@ -23,12 +23,8 @@ public class AdminTariffController {
 
     @PostMapping("/tariffs")
     public ResponseEntity<?> createTariff(@Valid @RequestBody TariffCreateRequest req) {
-        try {
-            Tariff saved = adminTariffService.createTariff(req);
-            return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("id", saved.getId()));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ex.getMessage());
-        }
+        Tariff saved = adminTariffService.createTariff(req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(java.util.Map.of("id", saved.getId()));
     }
 
     @PostMapping("/tariffs/{tariffId}/archive")

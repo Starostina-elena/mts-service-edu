@@ -37,8 +37,33 @@ tags:
     description: Личный кабинет пользователя
   - name: balance
     description: Баланс и платежи
+  - name: users
+    description: Управление пользователями (регистрация)
 
 paths:
+
+  /api/users:
+    post:
+      tags: [users]
+      summary: Создать пользователя
+      description: Создать новый аккаунт пользователя. Доступно без авторизации.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreateRequest'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '409':
+          description: Пользователь с таким email уже существует
+        '400':
+          description: Ошибка валидации
 
   /catalog/home:
     get:
@@ -1247,3 +1272,42 @@ components:
           type: string
         message:
           type: string
+
+    UserCreateRequest:
+      type: object
+      required: [email, name, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        name:
+          type: string
+          example: "Иван Иванов"
+        password:
+          type: string
+          description: Пароль пользователя (минимум 6 символов)
+          minLength: 6
+
+    UserResponse:
+      type: object
+      required: [id, email, name, role, created_at]
+      properties:
+        id:
+          type: string
+          example: "123"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        name:
+          type: string
+          example: "Иван Иванов"
+        role:
+          type: string
+          example: "USER"
+        created_at:
+          type: string
+          format: date-time
+
+
