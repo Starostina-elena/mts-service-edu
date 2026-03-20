@@ -19,6 +19,10 @@ import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class ApplicationService {
@@ -30,6 +34,17 @@ public class ApplicationService {
     private final BalanceRepository balanceRepository;
     private final ServiceRepository serviceRepository;
     private final ApplicationMapper applicationMapper;
+    private final UserService userService;
+
+    public List<Application> getApplicationsForUserEmail(String email) {
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return Collections.emptyList();
+        }
+        User user = userOpt.get();
+
+        return applicationRepository.findAllByUserOrderByCreatedAtDesc(user);
+    }
 
     @Transactional
     public ApplicationDto create(Long userId, ApplicationCreateDto dto) {

@@ -64,7 +64,7 @@ public class GlobalExceptionHandler {
                         (a, b) -> a + "; " + b
                 ));
 
-        ErrorResponse resp = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, "validation failed", errors, OffsetDateTime.now(ZoneOffset.UTC));
+        ErrorResponse resp = new ErrorResponse(ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resp);
     }
 
@@ -76,31 +76,19 @@ public class GlobalExceptionHandler {
                         v -> v.getMessage(),
                         (a, b) -> a + "; " + b
                 ));
-        ErrorResponse resp = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, "validation failed", errors, OffsetDateTime.now(ZoneOffset.UTC));
+        ErrorResponse resp = new ErrorResponse(ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resp);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex) {
-        ErrorResponse resp = new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage() != null ? ex.getMessage() : "invalid request", Map.of(), OffsetDateTime.now(ZoneOffset.UTC));
+        ErrorResponse resp = new ErrorResponse(ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(resp);
-    }
-  
-  @ExceptionHandler(TariffNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleNotFound(TariffNotFoundException ex) {
-        return Map.of("error", ex.getMessage());
     }
 
     @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleBadRequest(Exception ex) {
-        return Map.of("error", ex.getMessage());
-    }
-
-  @ExceptionHandler({MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBadRequest(Exception ex) {
-        return new ErrorResponse(ex.getMessage());
-    }
+            return new ErrorResponse(ex.getMessage());
+        }
 }
