@@ -18,10 +18,13 @@ services:
       retries: 5
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.local
     container_name: mts_service_app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
@@ -30,18 +33,6 @@ services:
     ports:
       - "8080:8080"
     restart: unless-stopped
-
-  flyway:
-    image: flyway/flyway:9
-    container_name: mts_service_flyway
-    depends_on:
-      - db
-    environment:
-      FLYWAY_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
-      FLYWAY_USER: ${POSTGRES_USER:-postgres}
-      FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-    volumes:
-      - ./src/main/resources/db/migration:/flyway/sql:ro
 
 volumes:
   db_data:

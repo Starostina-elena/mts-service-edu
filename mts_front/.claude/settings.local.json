@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd C:/Users/ibraa/project/blps_mts_service/mts_front && npm install 2>&1 | tail -5)",
+      "Bash(cd C:/Users/ibraa/project/blps_mts_service/mts_front && npx vite build 2>&1)",
+      "Read(//c/Users/ibraa/project/blps_mts_service/mts_service/**)",
+      "Bash(./gradlew dependencies:*)",
+      "Bash(cd C:/Users/ibraa/project/blps_mts_service/mts_front && npm install vue-router@4)",
+      "Bash(cd /c/Users/ibraa/project/blps_mts_service/mts_service && ./gradlew build -x test 2>&1 | tail -20)",
+      "Bash(npx vue-tsc:*)"
+    ]
+  }
+}
