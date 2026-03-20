@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import ru.aigul.mts_service.api.dto.ApplicationResponse;
 import ru.aigul.mts_service.model.Application;
 
-@Component
+@Component("apiApplicationMapper")
 public class ApplicationMapper {
 
     public ApplicationResponse toDto(Application a) {
