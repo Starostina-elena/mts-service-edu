@@ -19,9 +19,7 @@ services:
     command: ["postgres", "-c", "log_statement=all", "-c", "log_min_messages=DEBUG3"]
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile.local
+    build: .
     container_name: mts_service_app
     depends_on:
       db:

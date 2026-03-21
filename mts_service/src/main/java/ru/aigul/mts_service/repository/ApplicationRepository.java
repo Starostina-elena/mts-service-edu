@@ -1,15 +1,18 @@
 package ru.aigul.mts_service.repository;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import ru.aigul.mts_service.model.Application;
+import ru.aigul.mts_service.model.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import ru.aigul.mts_service.model.Application;
 import ru.aigul.mts_service.model.ApplicationStatus;
 
 import java.util.List;
 
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
+    List<Application> findAllByUserOrderByCreatedAtDesc(User user);
 
     @Query("""
             SELECT a FROM Application a
