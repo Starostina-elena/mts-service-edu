@@ -47,7 +47,7 @@ public class CatalogService {
     }
 
     public CatalogPageDto<TariffDeviceCardDto> getDevices(Long after, int limit) {
-        List<Tariff> raw = tariffRepository.findByStatusAndCategoryAndIdGreaterThanOrderByIdAsc(
+        List<Tariff> raw = tariffRepository.findByStatusAndCategoryWithServices(
                 TariffStatus.ACTIVE, TariffCategory.DEVICES, cursorOrZero(after), PageRequest.of(0, limit + 1));
         return toPage(raw, limit, tariffMapper::toDeviceCard);
     }
@@ -65,7 +65,7 @@ public class CatalogService {
     }
 
     public CatalogPageDto<TariffBusinessCardDto> getBusiness(Long after, int limit) {
-        List<Tariff> raw = tariffRepository.findByStatusAndCategoryAndIdGreaterThanOrderByIdAsc(
+        List<Tariff> raw = tariffRepository.findByStatusAndCategoryWithServices(
                 TariffStatus.ACTIVE, TariffCategory.BUSINESS, cursorOrZero(after), PageRequest.of(0, limit + 1));
         return toPage(raw, limit, tariffMapper::toBusinessCard);
     }

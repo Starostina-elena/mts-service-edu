@@ -13,13 +13,21 @@ import java.util.List;
 
 public interface TariffRepository extends JpaRepository<Tariff, Long> {
 
-    // Для DEVICES, BUSINESS: без фильтров
-    List<Tariff> findByStatusAndCategoryAndIdGreaterThanOrderByIdAsc(
-            TariffStatus status, TariffCategory category, Long after, Pageable pageable);
+    @Query("""
+            SELECT DISTINCT t FROM Tariff t
+            LEFT JOIN FETCH t.services
+            WHERE t.status = :status AND t.category = :category AND t.id > :after
+            ORDER BY t.id ASC
+            """)
+    List<Tariff> findByStatusAndCategoryWithServices(@Param("status") TariffStatus status,
+                                                      @Param("category") TariffCategory category,
+                                                      @Param("after") Long after,
+                                                      Pageable pageable);
 
     // Для HOME: фильтр по city через tariff_city_prices + опциональный priceMax
     @Query("""
             SELECT DISTINCT t FROM Tariff t
+            LEFT JOIN FETCH t.services
             JOIN TariffCityPrice tcp ON tcp.tariff = t AND tcp.city.id = :cityId
             WHERE t.status = 'ACTIVE' AND t.category = 'HOME'
             AND (:priceMax IS NULL OR tcp.price <= :priceMax)
