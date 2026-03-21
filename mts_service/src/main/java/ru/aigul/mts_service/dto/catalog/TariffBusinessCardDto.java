@@ -1,19 +1,20 @@
-package ru.aigul.mts_service.api.dto.catalog;
+package ru.aigul.mts_service.dto.catalog;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.aigul.mts_service.model.DeviceType;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TariffDeviceCardDto {
+public class TariffBusinessCardDto {
     private Long id;
     private String name;
     private BigDecimal basePrice;
-    private Integer internetGb;
-    private DeviceType deviceType;
+    private Integer speedMbps;
+    private String slaDescription;
+    private List<ServiceDto> services;
 }

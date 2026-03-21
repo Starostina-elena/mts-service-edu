@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.aigul.mts_service.api.dto.UserCreateRequest;
+import ru.aigul.mts_service.dto.UserCreateRequest;
 import ru.aigul.mts_service.exception.UserAlreadyExists;
 import ru.aigul.mts_service.model.Role;
 import ru.aigul.mts_service.model.User;

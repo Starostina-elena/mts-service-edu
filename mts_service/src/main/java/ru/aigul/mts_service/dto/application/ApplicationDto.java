@@ -1,4 +1,4 @@
-package ru.aigul.mts_service.api.dto.application;
+package ru.aigul.mts_service.dto.application;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

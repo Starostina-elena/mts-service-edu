@@ -1,7 +1,7 @@
-package ru.aigul.mts_service.api.mapper;
+package ru.aigul.mts_service.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.aigul.mts_service.api.dto.UserResponse;
+import ru.aigul.mts_service.dto.UserResponse;
 import ru.aigul.mts_service.model.User;
 
 @Component
@@ -18,4 +18,3 @@ public class UserMapper {
         );
     }
 }
-

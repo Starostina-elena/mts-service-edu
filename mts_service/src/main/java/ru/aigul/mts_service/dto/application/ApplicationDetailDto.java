@@ -1,9 +1,9 @@
-package ru.aigul.mts_service.api.dto.application;
+package ru.aigul.mts_service.dto.application;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.aigul.mts_service.api.dto.catalog.ServiceDto;
+import ru.aigul.mts_service.dto.catalog.ServiceDto;
 import ru.aigul.mts_service.model.ApplicationStatus;
 
 import java.time.LocalDateTime;

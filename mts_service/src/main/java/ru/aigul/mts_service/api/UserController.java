@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.aigul.mts_service.api.dto.UserCreateRequest;
-import ru.aigul.mts_service.api.dto.UserResponse;
-import ru.aigul.mts_service.api.mapper.UserMapper;
+import ru.aigul.mts_service.dto.UserCreateRequest;
+import ru.aigul.mts_service.dto.UserResponse;
+import ru.aigul.mts_service.mapper.UserMapper;
 import ru.aigul.mts_service.model.User;
 import ru.aigul.mts_service.service.UserService;
 

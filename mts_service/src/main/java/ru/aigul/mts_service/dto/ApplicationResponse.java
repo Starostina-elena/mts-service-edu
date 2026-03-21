@@ -1,4 +1,4 @@
-package ru.aigul.mts_service.api.dto;
+package ru.aigul.mts_service.dto;
 
 import lombok.*;
 

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.aigul.mts_service.api.dto.application.*;
+import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.model.ApplicationStatus;
 import ru.aigul.mts_service.service.ApplicationService;
 

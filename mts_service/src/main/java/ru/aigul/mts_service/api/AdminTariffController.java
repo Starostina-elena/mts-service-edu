@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.aigul.mts_service.api.dto.TariffCreateRequest;
+import ru.aigul.mts_service.dto.TariffCreateRequest;
 import ru.aigul.mts_service.model.Tariff;
 import ru.aigul.mts_service.service.AdminTariff;
 

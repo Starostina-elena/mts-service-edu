@@ -2,7 +2,7 @@ package ru.aigul.mts_service.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.aigul.mts_service.api.dto.catalog.*;
+import ru.aigul.mts_service.dto.catalog.*;
 import ru.aigul.mts_service.model.Tariff;
 
 import java.math.BigDecimal;

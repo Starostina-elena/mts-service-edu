@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.aigul.mts_service.api.dto.catalog.*;
+import ru.aigul.mts_service.dto.catalog.*;
 import ru.aigul.mts_service.exception.TariffNotFoundException;
 import ru.aigul.mts_service.mapper.CityMapper;
 import ru.aigul.mts_service.mapper.ServiceMapper;
@@ -39,8 +39,8 @@ public class CatalogService {
     }
 
     public CatalogPageDto<TariffMobileCardDto> getMobile(Integer internetGb, Integer callsMinutes,
-                                                          Boolean forFamily, Boolean noSubscriptionFee,
-                                                          Long after, int limit) {
+                                                         Boolean forFamily, Boolean noSubscriptionFee,
+                                                         Long after, int limit) {
         List<Tariff> raw = tariffRepository.findMobile(internetGb, callsMinutes, forFamily, noSubscriptionFee,
                 after, PageRequest.of(0, limit + 1));
         return toPage(raw, limit, tariffMapper::toMobileCard);

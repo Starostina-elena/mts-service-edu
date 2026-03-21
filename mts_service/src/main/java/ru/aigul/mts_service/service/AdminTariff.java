@@ -2,7 +2,7 @@ package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.aigul.mts_service.api.dto.TariffCreateRequest;
+import ru.aigul.mts_service.dto.TariffCreateRequest;
 import ru.aigul.mts_service.exception.TariffAlreadyArchivedException;
 import ru.aigul.mts_service.exception.TariffNotFoundException;
 import ru.aigul.mts_service.model.Tariff;

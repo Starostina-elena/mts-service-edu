@@ -1,11 +1,11 @@
-package ru.aigul.mts_service.api.mapper;
+package ru.aigul.mts_service.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.aigul.mts_service.api.dto.ApplicationResponse;
+import ru.aigul.mts_service.dto.ApplicationResponse;
 import ru.aigul.mts_service.model.Application;
 
-@Component("apiApplicationMapper")
-public class ApplicationMapper {
+@Component
+public class AccountApplicationMapper {
 
     public ApplicationResponse toDto(Application a) {
         if (a == null) {

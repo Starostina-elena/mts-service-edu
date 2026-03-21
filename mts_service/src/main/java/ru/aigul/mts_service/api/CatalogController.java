@@ -2,7 +2,7 @@ package ru.aigul.mts_service.api;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import ru.aigul.mts_service.api.dto.catalog.*;
+import ru.aigul.mts_service.dto.catalog.*;
 import ru.aigul.mts_service.service.CatalogService;
 
 import java.math.BigDecimal;

@@ -1,4 +1,4 @@
-package ru.aigul.mts_service.api.dto.application;
+package ru.aigul.mts_service.dto.application;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

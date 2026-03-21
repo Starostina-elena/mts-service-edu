@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.aigul.mts_service.api.dto.application.*;
+import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.exception.ApplicationNotFoundException;
 import ru.aigul.mts_service.exception.InsufficientFundsException;
 import ru.aigul.mts_service.exception.InvalidApplicationStatusException;
@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 @Service

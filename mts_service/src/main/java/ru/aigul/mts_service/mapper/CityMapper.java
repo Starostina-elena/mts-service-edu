@@ -1,7 +1,7 @@
 package ru.aigul.mts_service.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.aigul.mts_service.api.dto.catalog.CityDto;
+import ru.aigul.mts_service.dto.catalog.CityDto;
 import ru.aigul.mts_service.model.City;
 
 @Component

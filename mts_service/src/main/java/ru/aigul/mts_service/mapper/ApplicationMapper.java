@@ -2,9 +2,9 @@ package ru.aigul.mts_service.mapper;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import ru.aigul.mts_service.api.dto.application.ApplicationDetailDto;
-import ru.aigul.mts_service.api.dto.application.ApplicationDto;
-import ru.aigul.mts_service.api.dto.catalog.ServiceDto;
+import ru.aigul.mts_service.dto.application.ApplicationDetailDto;
+import ru.aigul.mts_service.dto.application.ApplicationDto;
+import ru.aigul.mts_service.dto.catalog.ServiceDto;
 import ru.aigul.mts_service.model.Application;
 
 import java.util.List;

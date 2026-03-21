@@ -3,7 +3,7 @@ package ru.aigul.mts_service.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import ru.aigul.mts_service.api.dto.BalanceResponse;
+import ru.aigul.mts_service.dto.BalanceResponse;
 import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.model.User;
 import ru.aigul.mts_service.repository.BalanceRepository;

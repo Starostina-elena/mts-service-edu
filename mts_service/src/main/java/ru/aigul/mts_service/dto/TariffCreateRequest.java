@@ -1,4 +1,4 @@
-package ru.aigul.mts_service.api.dto;
+package ru.aigul.mts_service.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
