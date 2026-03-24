@@ -2,6 +2,7 @@ package ru.aigul.mts_service.api;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,14 +13,19 @@ import ru.aigul.mts_service.service.ApplicationService;
 @RestController
 @RequestMapping("/applications")
 @RequiredArgsConstructor
-public class
-ApplicationController {
+public class ApplicationController {
 
     private final ApplicationService applicationService;
 
+    @Value("${app.pagination.default-limit}")
+    private int defaultLimit;
+
+    @Value("${app.auth.user-id-header}")
+    private String userIdHeader;
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApplicationDto create(@RequestHeader("X-User-Id") Long userId,
+    public ApplicationDto create(@RequestHeader("${app.auth.user-id-header}") Long userId,
                                  @Valid @RequestBody ApplicationCreateDto dto) {
         return applicationService.create(userId, dto);
     }
@@ -29,8 +35,8 @@ ApplicationController {
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) ApplicationStatus status,
             @RequestParam(required = false) Long after,
-            @RequestParam(defaultValue = "20") int limit) {
-        return applicationService.list(userId, status, after, limit);
+            @RequestParam(required = false) Integer limit) {
+        return applicationService.list(userId, status, after, limit != null ? limit : defaultLimit);
     }
 
     @GetMapping("/{applicationId}")
@@ -39,13 +45,13 @@ ApplicationController {
     }
 
     @PostMapping("/{applicationId}/approve")
-    public ResponseEntity<ApplicationDto> approve(@RequestHeader("X-User-Id") Long userId,
+    public ResponseEntity<ApplicationDto> approve(@RequestHeader("${app.auth.user-id-header}") Long userId,
                                                    @PathVariable Long applicationId) {
         return ResponseEntity.ok(applicationService.approve(userId, applicationId));
     }
 
     @PostMapping("/{applicationId}/reject")
-    public ResponseEntity<ApplicationDto> reject(@RequestHeader("X-User-Id") Long userId,
+    public ResponseEntity<ApplicationDto> reject(@RequestHeader("${app.auth.user-id-header}") Long userId,
                                                   @PathVariable Long applicationId,
                                                   @Valid @RequestBody ApplicationRejectDto dto) {
         return ResponseEntity.ok(applicationService.reject(userId, applicationId, dto));
