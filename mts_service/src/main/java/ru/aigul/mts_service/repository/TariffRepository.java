@@ -14,8 +14,7 @@ import java.util.List;
 public interface TariffRepository extends JpaRepository<Tariff, Long> {
 
     @Query("""
-            SELECT DISTINCT t FROM Tariff t
-            LEFT JOIN FETCH t.services
+            SELECT t FROM Tariff t
             WHERE t.status = :status AND t.category = :category
             AND (:after IS NULL OR t.id > :after)
             ORDER BY t.id ASC
@@ -28,7 +27,6 @@ public interface TariffRepository extends JpaRepository<Tariff, Long> {
     // Для HOME: фильтр по city через tariff_city_prices + опциональный priceMax
     @Query("""
             SELECT DISTINCT t FROM Tariff t
-            LEFT JOIN FETCH t.services
             JOIN TariffCityPrice tcp ON tcp.tariff = t AND tcp.city.id = :cityId
             WHERE t.status = 'ACTIVE' AND t.category = 'HOME'
             AND (:priceMax IS NULL OR tcp.price <= :priceMax)

@@ -354,7 +354,8 @@
             "header": [
               { "key": "Accept", "value": "application/json" },
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Mock-User", "value": "{{mockUser}}" }
+              { "key": "X-Mock-User", "value": "{{mockUser}}" },
+              { "key": "X-User-Id", "value": "1", "description": "ID пользователя из БД" }
             ],
             "body": {
               "mode": "raw",
@@ -404,7 +405,8 @@
             "method": "POST",
             "header": [
               { "key": "Accept", "value": "application/json" },
-              { "key": "X-Mock-User", "value": "manager@local" }
+              { "key": "X-Mock-User", "value": "manager@local" },
+              { "key": "X-User-Id", "value": "2", "description": "ID менеджера из БД" }
             ],
             "url": {
               "raw": "{{baseUrl}}/applications/1/approve",
@@ -421,7 +423,8 @@
             "header": [
               { "key": "Accept", "value": "application/json" },
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Mock-User", "value": "manager@local" }
+              { "key": "X-Mock-User", "value": "manager@local" },
+              { "key": "X-User-Id", "value": "2", "description": "ID менеджера из БД" }
             ],
             "body": {
               "mode": "raw",

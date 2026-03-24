@@ -3,6 +3,7 @@ package ru.aigul.mts_service.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -49,6 +50,7 @@ public class Tariff {
     private Integer tvChannels;
 
     @ManyToMany(fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
     @JoinTable(name = "tariff_services", joinColumns = @JoinColumn(name = "tariff_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
     private Set<Service> services = new HashSet<>();
 

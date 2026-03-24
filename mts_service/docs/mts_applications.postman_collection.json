@@ -137,13 +137,24 @@
 			"name": "Одобрить заявку",
 			"request": {
 				"method": "POST",
-				"header": [],
+				"header": [
+					{
+						"key": "X-Mock-User",
+						"value": "manager@local",
+						"description": "Роль MANAGER"
+					},
+					{
+						"key": "X-User-Id",
+						"value": "{{userId}}",
+						"description": "ID менеджера/админа"
+					}
+				],
 				"url": {
 					"raw": "{{baseUrl}}/applications/{{applicationId}}/approve",
 					"host": ["{{baseUrl}}"],
 					"path": ["applications", "{{applicationId}}", "approve"]
 				},
-				"description": "Одобрить заявку (Администратор). 409 — если заявка уже обработана."
+				"description": "Одобрить заявку (Менеджер). 409 — если заявка уже обработана."
 			},
 			"response": []
 		},
@@ -155,6 +166,16 @@
 					{
 						"key": "Content-Type",
 						"value": "application/json"
+					},
+					{
+						"key": "X-Mock-User",
+						"value": "manager@local",
+						"description": "Роль MANAGER"
+					},
+					{
+						"key": "X-User-Id",
+						"value": "{{userId}}",
+						"description": "ID менеджера/админа"
 					}
 				],
 				"body": {

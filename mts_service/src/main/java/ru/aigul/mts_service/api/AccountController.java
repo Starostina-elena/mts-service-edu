@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -35,21 +34,21 @@ public class AccountController {
     private final AccountApplicationMapper applicationMapper;
 
     @GetMapping("/applications")
-    public ResponseEntity<List<ApplicationResponse>> getMyApplications(@AuthenticationPrincipal UserDetails principal) {
-        List<Application> apps = applicationService.getApplicationsForUserEmail(principal.getUsername());
+    public ResponseEntity<List<ApplicationResponse>> getMyApplications(@AuthenticationPrincipal String email) {
+        List<Application> apps = applicationService.getApplicationsForUserEmail(email);
         List<ApplicationResponse> dto = apps.stream().map(applicationMapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(dto);
     }
 
     @GetMapping("/balance")
-    public ResponseEntity<BalanceResponse> getMyBalance(@AuthenticationPrincipal UserDetails principal) {
-        BalanceResponse resp = balanceService.getBalanceResponseForUserEmail(principal.getUsername());
+    public ResponseEntity<BalanceResponse> getMyBalance(@AuthenticationPrincipal String email) {
+        BalanceResponse resp = balanceService.getBalanceResponseForUserEmail(email);
         return ResponseEntity.ok(resp);
     }
 
     @PostMapping(path = "/balance/top-up", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PaymentResponse> topUpBalance(@AuthenticationPrincipal UserDetails principal, @Valid @RequestBody TopUpRequest req) {
-        Optional<String> paymentUrlOpt = balanceService.createTopUpPayment(principal.getUsername(), req.getAmount());
+    public ResponseEntity<PaymentResponse> topUpBalance(@AuthenticationPrincipal String email, @Valid @RequestBody TopUpRequest req) {
+        Optional<String> paymentUrlOpt = balanceService.createTopUpPayment(email, req.getAmount());
 
         if (paymentUrlOpt.isEmpty()) {
             return ResponseEntity.badRequest().build();

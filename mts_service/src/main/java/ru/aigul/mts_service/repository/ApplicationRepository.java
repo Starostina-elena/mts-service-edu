@@ -17,7 +17,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             SELECT a FROM Application a
             JOIN FETCH a.user JOIN FETCH a.tariff
             WHERE (:userId IS NULL OR a.user.id = :userId)
-            AND (:status IS NULL OR a.status = :status)
+            AND a.status = COALESCE(:status, a.status)
             AND (:after IS NULL OR a.id > :after)
             ORDER BY a.id ASC
             """)
