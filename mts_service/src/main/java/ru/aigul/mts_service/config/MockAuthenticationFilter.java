@@ -10,6 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.userdetails.User;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,20 +39,23 @@ public class MockAuthenticationFilter extends OncePerRequestFilter {
 
         UsernamePasswordAuthenticationToken auth;
         if (mockUser.equals(managerUser)) {
+            User principal = new User(mockUser, "", List.of(new SimpleGrantedAuthority("MANAGER")));
             auth = new UsernamePasswordAuthenticationToken(
-                    mockUser,
+                    principal,
                     null,
                     List.of(new SimpleGrantedAuthority("MANAGER"))
             );
         } else if (mockUser.equals(adminUser)) {
+            User principal = new User(mockUser, "", List.of(new SimpleGrantedAuthority("ADMIN")));
             auth = new UsernamePasswordAuthenticationToken(
-                    mockUser,
+                    principal,
                     null,
                     List.of(new SimpleGrantedAuthority("ADMIN"))
             );
         } else {
+            User principal = new User(mockUser, "", List.of(new SimpleGrantedAuthority("USER")));
             auth = new UsernamePasswordAuthenticationToken(
-                    mockUser,
+                    principal,
                     null,
                     List.of(new SimpleGrantedAuthority("USER"))
             );
