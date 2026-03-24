@@ -39,6 +39,12 @@ const routes = [
     meta: { requiresAuth: true, roles: ['USER'] },
   },
   {
+    path: '/account',
+    name: 'account',
+    component: () => import('@/views/AccountView.vue'),
+    meta: { requiresAuth: true, roles: ['USER', 'MANAGER', 'ADMIN'] },
+  },
+  {
     path: '/my-applications/:id',
     name: 'my-application-detail',
     component: () => import('@/views/MyApplicationDetailView.vue'),
