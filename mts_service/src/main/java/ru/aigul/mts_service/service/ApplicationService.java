@@ -1,9 +1,10 @@
 package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.exception.ApplicationNotFoundException;
 import ru.aigul.mts_service.exception.InsufficientFundsException;
@@ -91,34 +92,9 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public ApplicationPageDto list(Long userId, ApplicationStatus status, Long after, int limit) {
-        PageRequest pageRequest = PageRequest.of(0, limit + 1);
-        List<Application> raw;
-        if (userId != null) {
-            if (status != null && after != null) {
-                raw = applicationRepository.findAllByUserAndStatusAfter(userId, status, after, pageRequest);
-            } else if (status != null) {
-                raw = applicationRepository.findAllByUserAndStatus(userId, status, pageRequest);
-            } else if (after != null) {
-                raw = applicationRepository.findAllByUserAfter(userId, after, pageRequest);
-            } else {
-                raw = applicationRepository.findAllByUser(userId, pageRequest);
-            }
-        } else {
-            if (status != null && after != null) {
-                raw = applicationRepository.findAllByStatusAfter(status, after, pageRequest);
-            } else if (status != null) {
-                raw = applicationRepository.findAllByStatus(status, pageRequest);
-            } else if (after != null) {
-                raw = applicationRepository.findAllAfter(after, pageRequest);
-            } else {
-                raw = applicationRepository.findAllOrdered(pageRequest);
-            }
-        }
-        boolean hasNext = raw.size() > limit;
-        List<Application> page = hasNext ? raw.subList(0, limit) : raw;
-        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
-        return new ApplicationPageDto(page.stream().map(applicationMapper::toDto).toList(), nextCursor);
+    public CursorPage<ApplicationDto> list(Long userId, ApplicationStatus status, Long after, int limit) {
+        List<Application> raw = applicationRepository.findAllFiltered(userId, status, after, Limit.of(limit + 1));
+        return CursorPage.of(raw, limit, applicationMapper::toDto, Application::getId);
     }
 
     @Transactional(readOnly = true)

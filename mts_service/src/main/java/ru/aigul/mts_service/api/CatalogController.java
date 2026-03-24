@@ -3,6 +3,7 @@ package ru.aigul.mts_service.api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.catalog.*;
 import ru.aigul.mts_service.service.CatalogService;
 
@@ -20,7 +21,7 @@ public class CatalogController {
     private int defaultLimit;
 
     @GetMapping("/home")
-    public CatalogPageDto<TariffHomeCardDto> getHome(
+    public CursorPage<TariffHomeCardDto> getHome(
             @RequestParam Long cityId,
             @RequestParam(required = false) BigDecimal priceMax,
             @RequestParam(required = false) Long after,
@@ -29,7 +30,7 @@ public class CatalogController {
     }
 
     @GetMapping("/mobile")
-    public CatalogPageDto<TariffMobileCardDto> getMobile(
+    public CursorPage<TariffMobileCardDto> getMobile(
             @RequestParam(required = false) Integer internetGb,
             @RequestParam(required = false) Integer callsMinutes,
             @RequestParam(required = false) Boolean forFamily,
@@ -40,14 +41,14 @@ public class CatalogController {
     }
 
     @GetMapping("/devices")
-    public CatalogPageDto<TariffDeviceCardDto> getDevices(
+    public CursorPage<TariffDeviceCardDto> getDevices(
             @RequestParam(required = false) Long after,
             @RequestParam(required = false) Integer limit) {
         return catalogService.getDevices(after, limit != null ? limit : defaultLimit);
     }
 
     @GetMapping("/landline")
-    public CatalogPageDto<TariffLandlineCardDto> getLandline(
+    public CursorPage<TariffLandlineCardDto> getLandline(
             @RequestParam Long cityId,
             @RequestParam(required = false) Long after,
             @RequestParam(required = false) Integer limit) {
@@ -55,7 +56,7 @@ public class CatalogController {
     }
 
     @GetMapping("/satellite-tv")
-    public CatalogPageDto<TariffSatelliteCardDto> getSatelliteTv(
+    public CursorPage<TariffSatelliteCardDto> getSatelliteTv(
             @RequestParam Long cityId,
             @RequestParam(required = false) Long after,
             @RequestParam(required = false) Integer limit) {
@@ -63,7 +64,7 @@ public class CatalogController {
     }
 
     @GetMapping("/business")
-    public CatalogPageDto<TariffBusinessCardDto> getBusiness(
+    public CursorPage<TariffBusinessCardDto> getBusiness(
             @RequestParam(required = false) Long after,
             @RequestParam(required = false) Integer limit) {
         return catalogService.getBusiness(after, limit != null ? limit : defaultLimit);

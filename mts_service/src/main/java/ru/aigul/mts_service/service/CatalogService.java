@@ -1,9 +1,10 @@
 package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.catalog.*;
 import ru.aigul.mts_service.exception.TariffNotFoundException;
 import ru.aigul.mts_service.mapper.CityMapper;
@@ -32,42 +33,42 @@ public class CatalogService {
     private final ServiceMapper serviceMapper;
 
 
-    public CatalogPageDto<TariffHomeCardDto> getHome(Long cityId, BigDecimal priceMax, Long after, int limit) {
-        List<Tariff> raw = tariffRepository.findHome(cityId, priceMax, after, PageRequest.of(0, limit + 1));
+    public CursorPage<TariffHomeCardDto> getHome(Long cityId, BigDecimal priceMax, Long after, int limit) {
+        List<Tariff> raw = tariffRepository.findHome(cityId, priceMax, after, Limit.of(limit + 1));
         Map<Long, BigDecimal> prices = cityPriceMap(raw, cityId);
-        return toPage(raw, limit, t -> tariffMapper.toHomeCard(t, prices.get(t.getId())));
+        return CursorPage.of(raw, limit, t -> tariffMapper.toHomeCard(t, prices.get(t.getId())), Tariff::getId);
     }
 
-    public CatalogPageDto<TariffMobileCardDto> getMobile(Integer internetGb, Integer callsMinutes,
-                                                         Boolean forFamily, Boolean noSubscriptionFee,
-                                                         Long after, int limit) {
+    public CursorPage<TariffMobileCardDto> getMobile(Integer internetGb, Integer callsMinutes,
+                                                      Boolean forFamily, Boolean noSubscriptionFee,
+                                                      Long after, int limit) {
         List<Tariff> raw = tariffRepository.findMobile(internetGb, callsMinutes, forFamily, noSubscriptionFee,
-                after, PageRequest.of(0, limit + 1));
-        return toPage(raw, limit, tariffMapper::toMobileCard);
+                after, Limit.of(limit + 1));
+        return CursorPage.of(raw, limit, tariffMapper::toMobileCard, Tariff::getId);
     }
 
-    public CatalogPageDto<TariffDeviceCardDto> getDevices(Long after, int limit) {
+    public CursorPage<TariffDeviceCardDto> getDevices(Long after, int limit) {
         List<Tariff> raw = tariffRepository.findByStatusAndCategoryWithServices(
-                TariffStatus.ACTIVE, TariffCategory.DEVICES, cursorOrZero(after), PageRequest.of(0, limit + 1));
-        return toPage(raw, limit, tariffMapper::toDeviceCard);
+                TariffStatus.ACTIVE, TariffCategory.DEVICES, after, Limit.of(limit + 1));
+        return CursorPage.of(raw, limit, tariffMapper::toDeviceCard, Tariff::getId);
     }
 
-    public CatalogPageDto<TariffLandlineCardDto> getLandline(Long cityId, Long after, int limit) {
-        List<Tariff> raw = tariffRepository.findByCity(TariffCategory.LANDLINE, cityId, after, PageRequest.of(0, limit + 1));
+    public CursorPage<TariffLandlineCardDto> getLandline(Long cityId, Long after, int limit) {
+        List<Tariff> raw = tariffRepository.findByCity(TariffCategory.LANDLINE, cityId, after, Limit.of(limit + 1));
         Map<Long, BigDecimal> prices = cityPriceMap(raw, cityId);
-        return toPage(raw, limit, t -> tariffMapper.toLandlineCard(t, prices.get(t.getId())));
+        return CursorPage.of(raw, limit, t -> tariffMapper.toLandlineCard(t, prices.get(t.getId())), Tariff::getId);
     }
 
-    public CatalogPageDto<TariffSatelliteCardDto> getSatelliteTv(Long cityId, Long after, int limit) {
-        List<Tariff> raw = tariffRepository.findByCity(TariffCategory.SATELLITE_TV, cityId, after, PageRequest.of(0, limit + 1));
+    public CursorPage<TariffSatelliteCardDto> getSatelliteTv(Long cityId, Long after, int limit) {
+        List<Tariff> raw = tariffRepository.findByCity(TariffCategory.SATELLITE_TV, cityId, after, Limit.of(limit + 1));
         Map<Long, BigDecimal> prices = cityPriceMap(raw, cityId);
-        return toPage(raw, limit, t -> tariffMapper.toSatelliteCard(t, prices.get(t.getId())));
+        return CursorPage.of(raw, limit, t -> tariffMapper.toSatelliteCard(t, prices.get(t.getId())), Tariff::getId);
     }
 
-    public CatalogPageDto<TariffBusinessCardDto> getBusiness(Long after, int limit) {
+    public CursorPage<TariffBusinessCardDto> getBusiness(Long after, int limit) {
         List<Tariff> raw = tariffRepository.findByStatusAndCategoryWithServices(
-                TariffStatus.ACTIVE, TariffCategory.BUSINESS, cursorOrZero(after), PageRequest.of(0, limit + 1));
-        return toPage(raw, limit, tariffMapper::toBusinessCard);
+                TariffStatus.ACTIVE, TariffCategory.BUSINESS, after, Limit.of(limit + 1));
+        return CursorPage.of(raw, limit, tariffMapper::toBusinessCard, Tariff::getId);
     }
 
     public TariffDetailDto getTariff(Long tariffId, Long cityId) {
@@ -96,14 +97,4 @@ public class CatalogService {
                 .collect(Collectors.toMap(tcp -> tcp.getTariff().getId(), TariffCityPrice::getPrice));
     }
 
-    private <T> CatalogPageDto<T> toPage(List<Tariff> raw, int limit, java.util.function.Function<Tariff, T> mapper) {
-        boolean hasNext = raw.size() > limit;
-        List<Tariff> page = hasNext ? raw.subList(0, limit) : raw;
-        Long nextCursor = hasNext ? page.get(page.size() - 1).getId() : null;
-        return new CatalogPageDto<>(page.stream().map(mapper).toList(), nextCursor);
-    }
-
-    private long cursorOrZero(Long after) {
-        return Optional.ofNullable(after).orElse(0L);
-    }
 }

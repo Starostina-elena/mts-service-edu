@@ -1,6 +1,6 @@
 package ru.aigul.mts_service.repository;
 
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,13 +16,14 @@ public interface TariffRepository extends JpaRepository<Tariff, Long> {
     @Query("""
             SELECT DISTINCT t FROM Tariff t
             LEFT JOIN FETCH t.services
-            WHERE t.status = :status AND t.category = :category AND t.id > :after
+            WHERE t.status = :status AND t.category = :category
+            AND (:after IS NULL OR t.id > :after)
             ORDER BY t.id ASC
             """)
     List<Tariff> findByStatusAndCategoryWithServices(@Param("status") TariffStatus status,
                                                       @Param("category") TariffCategory category,
                                                       @Param("after") Long after,
-                                                      Pageable pageable);
+                                                      Limit limit);
 
     // Для HOME: фильтр по city через tariff_city_prices + опциональный priceMax
     @Query("""
@@ -37,7 +38,7 @@ public interface TariffRepository extends JpaRepository<Tariff, Long> {
     List<Tariff> findHome(@Param("cityId") Long cityId,
                           @Param("priceMax") BigDecimal priceMax,
                           @Param("after") Long after,
-                          Pageable pageable);
+                          Limit limit);
 
     // Для LANDLINE и SATELLITE_TV: фильтр по city через tariff_city_prices
     @Query("""
@@ -50,7 +51,7 @@ public interface TariffRepository extends JpaRepository<Tariff, Long> {
     List<Tariff> findByCity(@Param("category") TariffCategory category,
                             @Param("cityId") Long cityId,
                             @Param("after") Long after,
-                            Pageable pageable);
+                            Limit limit);
 
     // Для MOBILE: опциональные фильтры
     @Query("""
@@ -68,5 +69,5 @@ public interface TariffRepository extends JpaRepository<Tariff, Long> {
                             @Param("forFamily") Boolean forFamily,
                             @Param("noSubscriptionFee") Boolean noSubscriptionFee,
                             @Param("after") Long after,
-                            Pageable pageable);
+                            Limit limit);
 }

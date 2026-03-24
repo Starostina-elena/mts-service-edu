@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.model.ApplicationStatus;
 import ru.aigul.mts_service.service.ApplicationService;
@@ -31,7 +32,7 @@ public class ApplicationController {
     }
 
     @GetMapping
-    public ApplicationPageDto list(
+    public CursorPage<ApplicationDto> list(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) ApplicationStatus status,
             @RequestParam(required = false) Long after,
