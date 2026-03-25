@@ -13,11 +13,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.core.query.StringQuery;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.model.Tariff;
-import ru.aigul.mts_service.model.TariffCategory;
 import ru.aigul.mts_service.model.TariffStatus;
 import ru.aigul.mts_service.repository.TariffRepository;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,50 +63,17 @@ public class TariffSearchService {
         StringQuery q = new StringQuery(bool.toString());
         q.setPageable(PageRequest.of(0, limit + 1, Sort.by(Sort.Direction.ASC, "id")));
 
-        List<TariffDocument> items = null;
+        List<TariffDocument> items;
         try {
             SearchHits<TariffDocument> hits = es.search(q, TariffDocument.class);
             items = hits.getSearchHits().stream().map(SearchHit::getContent).collect(Collectors.toList());
             log.info("Elasticsearch returned {} hits for q='{}' category='{}' after='{}'", items.size(), qStr, categoryStr, after);
         } catch (Exception ex) {
             log.warn("Elasticsearch search failed: {}", ex.toString());
-            items = null;
+            items = List.of();
         }
 
-        if (items != null && !items.isEmpty()) {
-            log.info("Using Elasticsearch results ({} items)", items.size());
-            return new SearchResult<>(CursorPage.of(items, limit, t -> t, TariffDocument::getId), "es");
-        }
-
-        try {
-            TariffCategory category = null;
-            if (categoryStr != null && !categoryStr.isBlank()) {
-                try {
-                    category = TariffCategory.valueOf(categoryStr);
-                } catch (IllegalArgumentException ignored) {
-                }
-            }
-            log.info("Falling back to JPA search for q='{}' category='{}' after='{}'", qStr, categoryStr, after);
-            List<Tariff> found = tariffRepository.searchFallback(qStr, category, after, org.springframework.data.domain.Limit.of(limit + 1));
-            List<TariffDocument> docs = found.stream().map(this::toDocument).collect(Collectors.toList());
-            log.info("Fallback returned {} items", docs.size());
-            return new SearchResult<>(CursorPage.of(docs, limit, t -> t, TariffDocument::getId), "jpa");
-        } catch (Exception ex) {
-            log.error("Fallback search failed: {}", ex.toString());
-            return new SearchResult<>(new CursorPage<>(List.of(), null), "none");
-        }
-    }
-
-    public long countIndexed() {
-        StringQuery q = new StringQuery(QueryBuilders.matchAllQuery().toString());
-        return es.count(q, TariffDocument.class);
-    }
-
-    public List<TariffDocument> sampleIndexed(int limit) {
-        StringQuery q = new StringQuery(QueryBuilders.matchAllQuery().toString());
-        q.setPageable(PageRequest.of(0, limit));
-        SearchHits<TariffDocument> hits = es.search(q, TariffDocument.class);
-        return hits.getSearchHits().stream().map(SearchHit::getContent).collect(Collectors.toList());
+        return new SearchResult<>(CursorPage.of(items, limit, t -> t, TariffDocument::getId), "es");
     }
 
     public int reindexAll() {

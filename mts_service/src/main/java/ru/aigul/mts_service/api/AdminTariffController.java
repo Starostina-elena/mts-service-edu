@@ -40,18 +40,6 @@ public class AdminTariffController {
     @PostMapping("/tariffs/reindex")
     public ResponseEntity<?> reindexAll() {
         int reindexed = tariffSearchService.reindexAll();
-        long esCount = tariffSearchService.countIndexed();
-        return ResponseEntity.ok(java.util.Map.of("reindexed", reindexed, "esCount", esCount));
-    }
-
-    @GetMapping("/tariffs/index/count")
-    public ResponseEntity<?> countIndexed() {
-        long count = tariffSearchService.countIndexed();
-        return ResponseEntity.ok(java.util.Map.of("count", count));
-    }
-
-    @GetMapping("/tariffs/index/sample")
-    public ResponseEntity<?> sampleIndexed(@RequestParam(required = false, defaultValue = "5") int limit) {
-        return ResponseEntity.ok(tariffSearchService.sampleIndexed(limit));
+        return ResponseEntity.ok(java.util.Map.of("reindexed", reindexed));
     }
 }

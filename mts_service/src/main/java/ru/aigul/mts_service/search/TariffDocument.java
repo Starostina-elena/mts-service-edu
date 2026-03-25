@@ -6,8 +6,6 @@ import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Document(indexName = "tariffs")
 @Data
 public class TariffDocument {
