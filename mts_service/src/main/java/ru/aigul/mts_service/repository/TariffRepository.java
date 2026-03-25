@@ -70,20 +70,4 @@ public interface TariffRepository extends JpaRepository<Tariff, Long> {
                             @Param("noSubscriptionFee") Boolean noSubscriptionFee,
                             @Param("after") Long after,
                             Limit limit);
-
-    @Query("""
-            SELECT DISTINCT t FROM Tariff t
-            LEFT JOIN FETCH t.services
-            WHERE t.status = 'ACTIVE'
-            AND (:category IS NULL OR t.category = :category)
-            AND (
-              COALESCE(:q, '') = '' OR LOWER(t.name) LIKE LOWER(CONCAT('%',:q,'%')) OR LOWER(t.description) LIKE LOWER(CONCAT('%',:q,'%'))
-            )
-            AND (:after IS NULL OR t.id > :after)
-            ORDER BY t.id ASC
-            """)
-    List<Tariff> searchFallback(@Param("q") String q,
-                                @Param("category") TariffCategory category,
-                                @Param("after") Long after,
-                                Limit limit);
 }
