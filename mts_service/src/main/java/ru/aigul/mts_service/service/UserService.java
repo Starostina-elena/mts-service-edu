@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aigul.mts_service.dto.UserCreateRequest;
 import ru.aigul.mts_service.exception.UserAlreadyExists;
@@ -20,7 +21,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Transactional
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public User createUser(UserCreateRequest req) {
         if (userRepository.existsByEmail(req.getEmail())) {
             throw new UserAlreadyExists(req.getEmail());

@@ -2,6 +2,8 @@ package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import ru.aigul.mts_service.dto.TariffCreateRequest;
 import ru.aigul.mts_service.exception.TariffAlreadyArchivedException;
 import ru.aigul.mts_service.exception.TariffNotFoundException;
@@ -39,6 +41,7 @@ public class AdminTariff {
         return saved;
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void archiveTariff(Long id) {
         Optional<Tariff> opt = tariffRepository.findById(id);
         if (opt.isEmpty()) throw new TariffNotFoundException(id);
@@ -48,6 +51,7 @@ public class AdminTariff {
         saveTariff(t);
     }
 
+    @Transactional
     public Tariff createTariff(TariffCreateRequest req) {
         TariffCategory category = normalizeCategory(req.getCategory());
 
