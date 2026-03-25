@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import ru.aigul.mts_service.dto.TariffCreateRequest;
 import ru.aigul.mts_service.model.Tariff;
 import ru.aigul.mts_service.service.AdminTariff;
+import ru.aigul.mts_service.search.TariffSearchService;
 
 @RestController
 @RequestMapping("/admin")
@@ -20,6 +23,7 @@ import ru.aigul.mts_service.service.AdminTariff;
 public class AdminTariffController {
 
     private final AdminTariff adminTariffService;
+    private final TariffSearchService tariffSearchService;
 
     @PostMapping("/tariffs")
     public ResponseEntity<?> createTariff(@Valid @RequestBody TariffCreateRequest req) {
@@ -31,5 +35,23 @@ public class AdminTariffController {
     public ResponseEntity<?> archiveTariff(@PathVariable("tariffId") Long tariffId) {
         adminTariffService.archiveTariff(tariffId);
         return ResponseEntity.ok(java.util.Map.of("id", tariffId, "status", "ARCHIVED"));
+    }
+
+    @PostMapping("/tariffs/reindex")
+    public ResponseEntity<?> reindexAll() {
+        int reindexed = tariffSearchService.reindexAll();
+        long esCount = tariffSearchService.countIndexed();
+        return ResponseEntity.ok(java.util.Map.of("reindexed", reindexed, "esCount", esCount));
+    }
+
+    @GetMapping("/tariffs/index/count")
+    public ResponseEntity<?> countIndexed() {
+        long count = tariffSearchService.countIndexed();
+        return ResponseEntity.ok(java.util.Map.of("count", count));
+    }
+
+    @GetMapping("/tariffs/index/sample")
+    public ResponseEntity<?> sampleIndexed(@RequestParam(required = false, defaultValue = "5") int limit) {
+        return ResponseEntity.ok(tariffSearchService.sampleIndexed(limit));
     }
 }

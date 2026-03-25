@@ -13,6 +13,7 @@ import ru.aigul.mts_service.repository.CityRepository;
 import ru.aigul.mts_service.repository.ServiceRepository;
 import ru.aigul.mts_service.repository.TariffCityPriceRepository;
 import ru.aigul.mts_service.repository.TariffRepository;
+import ru.aigul.mts_service.search.TariffSearchService;
 
 import java.util.HashSet;
 import java.util.List;
@@ -27,9 +28,15 @@ public class AdminTariff {
     private final CityRepository cityRepository;
     private final ServiceRepository serviceRepository;
     private final TariffCityPriceRepository tariffCityPriceRepository;
+    private final TariffSearchService tariffSearchService;
 
     public Tariff saveTariff(Tariff tariff) {
-        return tariffRepository.save(tariff);
+        Tariff saved = tariffRepository.save(tariff);
+        try {
+            tariffSearchService.index(saved);
+        } catch (Exception ignored) {
+        }
+        return saved;
     }
 
     public void archiveTariff(Long id) {
@@ -38,7 +45,7 @@ public class AdminTariff {
         Tariff t = opt.get();
         if (t.getStatus() == TariffStatus.ARCHIVED) throw new TariffAlreadyArchivedException(id);
         t.setStatus(TariffStatus.ARCHIVED);
-        tariffRepository.save(t);
+        saveTariff(t);
     }
 
     public Tariff createTariff(TariffCreateRequest req) {

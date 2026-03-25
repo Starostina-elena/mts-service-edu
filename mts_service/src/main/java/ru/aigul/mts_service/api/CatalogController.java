@@ -5,8 +5,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.catalog.*;
+import ru.aigul.mts_service.search.TariffDocument;
+import ru.aigul.mts_service.search.TariffSearchService;
+import ru.aigul.mts_service.search.SearchResult;
 import ru.aigul.mts_service.service.CatalogService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -16,6 +20,7 @@ import java.util.List;
 public class CatalogController {
 
     private final CatalogService catalogService;
+    private final TariffSearchService tariffSearchService;
 
     @Value("${app.pagination.default-limit}")
     private int defaultLimit;
@@ -84,5 +89,20 @@ public class CatalogController {
     @GetMapping("/services")
     public List<ServiceDto> getServices() {
         return catalogService.getServices();
+    }
+
+    @GetMapping("/search")
+    public CursorPage<TariffDocument> search(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) BigDecimal priceMax,
+            @RequestParam(required = false) Long after,
+            @RequestParam(required = false) Integer limit,
+            HttpServletResponse response) {
+        int lim = limit != null ? limit : defaultLimit;
+        Double price = priceMax != null ? priceMax.doubleValue() : null;
+        SearchResult<TariffDocument> res = tariffSearchService.search(q, category, price, after, lim);
+        if (res != null && res.getSource() != null) response.setHeader("X-Search-Source", res.getSource());
+        return res != null && res.getPage() != null ? res.getPage() : new CursorPage<>(List.of(), null);
     }
 }
