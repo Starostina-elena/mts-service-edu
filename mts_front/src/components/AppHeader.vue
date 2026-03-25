@@ -23,9 +23,6 @@ function doLogout() {
         <template v-if="isLoggedIn && !isAdmin && !isManager">
           <router-link to="/my-applications" class="header__link">Мои заявки</router-link>
         </template>
-        <template v-if="isLoggedIn">
-          <router-link to="/account" class="header__link">Личный кабинет</router-link>
-        </template>
         <template v-if="isManager || isAdmin">
           <router-link to="/applications" class="header__link">Заявки</router-link>
         </template>
