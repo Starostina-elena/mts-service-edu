@@ -134,6 +134,30 @@ public class TariffSearchService {
         d.setDescription(t.getDescription());
         d.setCategory(t.getCategory() != null ? t.getCategory().name() : null);
         d.setBasePrice(t.getBasePrice() != null ? t.getBasePrice().doubleValue() : null);
+
+        d.setSpeedMbps(t.getSpeedMbps());
+        d.setTvChannels(t.getTvChannels());
+        d.setInternetGb(t.getInternetGb());
+        d.setCallsMinutes(t.getCallsMinutes());
+        d.setSmsCount(t.getSmsCount());
+        d.setForFamily(t.isForFamily());
+        d.setDeviceType(t.getDeviceType() != null ? t.getDeviceType().name() : null);
+        d.setLocalMinutes(t.getLocalMinutes());
+        d.setIntercityMinutes(t.getIntercityMinutes());
+        d.setMobileMinutes(t.getMobileMinutes());
+        d.setChannelsTotal(t.getChannelsTotal());
+        d.setChannelsHd(t.getChannelsHd());
+
+        if (t.getServices() != null && !t.getServices().isEmpty()) {
+            List<java.util.Map<String, Object>> serviceDocs = t.getServices().stream().map(s -> {
+                java.util.Map<String, Object> map = new java.util.HashMap<>();
+                map.put("id", s.getId());
+                map.put("name", s.getName());
+                return map;
+            }).collect(Collectors.toList());
+            d.setServices(serviceDocs);
+        }
+
         d.setStatus(t.getStatus() != null ? t.getStatus().name() : null);
         if (t.getCreatedAt() != null) {
             d.setCreatedAt(t.getCreatedAt().atOffset(java.time.ZoneOffset.UTC).toString());
