@@ -52,3 +52,7 @@ export function fetchCities() {
 export function fetchServices() {
   return request('/catalog/services')
 }
+
+export function searchCatalog({ q, category, priceMax, after, limit } = {}) {
+  return request('/catalog/search', { q, category, priceMax, after, limit })
+}

@@ -35,3 +35,7 @@ export function archiveTariff(tariffId) {
 export function createService(data) {
   return postJSON('/admin/services', data)
 }
+
+export function reindexTariffs() {
+  return postEmpty('/admin/tariffs/reindex')
+}

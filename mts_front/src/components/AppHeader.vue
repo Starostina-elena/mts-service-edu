@@ -1,9 +1,28 @@
 <script setup>
+import { ref } from 'vue'
 import { useAuth } from '@/auth/useAuth'
 import { useRouter } from 'vue-router'
+import { reindexTariffs } from '@/api/admin'
 
 const { currentUser, isLoggedIn, isAdmin, isManager, logout } = useAuth()
 const router = useRouter()
+const reindexLoading = ref(false)
+const reindexResult = ref('')
+
+async function runReindex() {
+  reindexLoading.value = true
+  reindexResult.value = ''
+
+  try {
+    const result = await reindexTariffs()
+    const count = typeof result?.reindexed === 'number' ? result.reindexed : 0
+    reindexResult.value = `Готово: ${count}`
+  } catch (e) {
+    reindexResult.value = e?.message || 'Ошибка реиндексации'
+  } finally {
+    reindexLoading.value = false
+  }
+}
 
 function doLogout() {
   logout()
@@ -34,6 +53,16 @@ function doLogout() {
 
       <div class="header__user">
         <template v-if="isLoggedIn">
+          <template v-if="isAdmin">
+            <button
+              class="header__reindex"
+              :disabled="reindexLoading"
+              @click="runReindex"
+            >
+              {{ reindexLoading ? 'Индексирую...' : 'Реиндекс ES' }}
+            </button>
+            <span v-if="reindexResult" class="header__reindex-result">{{ reindexResult }}</span>
+          </template>
           <span class="header__username">{{ currentUser.name }}</span>
           <span class="header__role">({{ currentUser.role }})</span>
           <button class="header__logout" @click="doLogout">Выйти</button>
@@ -121,5 +150,29 @@ function doLogout() {
   color: #e00;
   font-weight: 600;
   font-size: 14px;
+}
+.header__reindex {
+  background: #e00;
+  border: 1px solid #e00;
+  color: #fff;
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.header__reindex:hover {
+  background: #c80000;
+  border-color: #c80000;
+}
+.header__reindex:disabled {
+  opacity: .7;
+  cursor: wait;
+}
+.header__reindex-result {
+  color: #666;
+  font-size: 12px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>
