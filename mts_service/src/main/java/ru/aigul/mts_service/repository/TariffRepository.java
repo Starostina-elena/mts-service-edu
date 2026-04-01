@@ -10,6 +10,7 @@ import ru.aigul.mts_service.model.TariffStatus;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface TariffRepository extends JpaRepository<Tariff, Long> {
 
@@ -50,6 +51,14 @@ public interface TariffRepository extends JpaRepository<Tariff, Long> {
                             @Param("cityId") Long cityId,
                             @Param("after") Long after,
                             Limit limit);
+
+    // Загружает services одним JOIN FETCH запросом для списка тарифов (решение N+1)
+    @Query("SELECT DISTINCT t FROM Tariff t LEFT JOIN FETCH t.services WHERE t IN :tariffs ORDER BY t.id ASC")
+    List<Tariff> fetchWithServices(@Param("tariffs") List<Tariff> tariffs);
+
+    // Загружает одиночный тариф с services (для detail-страницы)
+    @Query("SELECT t FROM Tariff t LEFT JOIN FETCH t.services WHERE t.id = :id")
+    Optional<Tariff> findByIdWithServices(@Param("id") Long id);
 
     // Для MOBILE: опциональные фильтры
     @Query("""

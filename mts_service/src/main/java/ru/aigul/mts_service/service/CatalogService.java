@@ -35,6 +35,7 @@ public class CatalogService {
 
     public CursorPage<TariffHomeCardDto> getHome(Long cityId, BigDecimal priceMax, Long after, int limit) {
         List<Tariff> raw = tariffRepository.findHome(cityId, priceMax, after, Limit.of(limit + 1));
+        if (!raw.isEmpty()) tariffRepository.fetchWithServices(raw);
         Map<Long, BigDecimal> prices = cityPriceMap(raw, cityId);
         return CursorPage.of(raw, limit, t -> tariffMapper.toHomeCard(t, prices.get(t.getId())), Tariff::getId);
     }
@@ -68,11 +69,12 @@ public class CatalogService {
     public CursorPage<TariffBusinessCardDto> getBusiness(Long after, int limit) {
         List<Tariff> raw = tariffRepository.findByStatusAndCategoryWithServices(
                 TariffStatus.ACTIVE, TariffCategory.BUSINESS, after, Limit.of(limit + 1));
+        if (!raw.isEmpty()) tariffRepository.fetchWithServices(raw);
         return CursorPage.of(raw, limit, tariffMapper::toBusinessCard, Tariff::getId);
     }
 
     public TariffDetailDto getTariff(Long tariffId, Long cityId) {
-        Tariff tariff = tariffRepository.findById(tariffId)
+        Tariff tariff = tariffRepository.findByIdWithServices(tariffId)
                 .orElseThrow(() -> new TariffNotFoundException(tariffId));
         Optional<BigDecimal> cityPrice = Optional.empty();
         if (cityId != null) {
