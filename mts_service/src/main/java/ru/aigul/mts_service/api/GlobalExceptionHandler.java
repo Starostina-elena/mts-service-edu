@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import ru.aigul.mts_service.dto.ErrorResponse;
+import org.springframework.security.authentication.BadCredentialsException;
 import ru.aigul.mts_service.exception.AccessDeniedException;
 import ru.aigul.mts_service.exception.ApplicationNotFoundException;
 import ru.aigul.mts_service.exception.InsufficientFundsException;
@@ -46,6 +47,18 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrorResponse handleAccessDenied(AccessDeniedException ex) {
         return new ErrorResponse(ex.getMessage());
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrorResponse handleSpringAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        return new ErrorResponse("Access denied: insufficient privileges");
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ErrorResponse handleBadCredentials(BadCredentialsException ex) {
+        return new ErrorResponse("Authentication failed: invalid credentials");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
