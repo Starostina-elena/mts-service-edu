@@ -30,6 +30,20 @@ public class NarayanaConfig {
 
     @Bean
     public CommandLineRunner printTxManager(PlatformTransactionManager txManager) {
-        return args -> System.out.println("PlatformTransactionManager bean: " + txManager.getClass().getName());
+        return args -> {
+            System.out.println("PlatformTransactionManager bean: " + txManager.getClass().getName());
+            if (txManager instanceof org.springframework.transaction.jta.JtaTransactionManager jta) {
+                Object tm = jta.getTransactionManager();
+                Object ut = jta.getUserTransaction();
+                System.out.println(" -> underlying TransactionManager: " + (tm != null ? tm.getClass().getName() : "<null>"));
+                System.out.println(" -> underlying UserTransaction: " + (ut != null ? ut.getClass().getName() : "<null>"));
+            }
+            try {
+                Object arjunaTm = com.arjuna.ats.jta.TransactionManager.transactionManager();
+                System.out.println("Arjuna static TM: " + (arjunaTm != null ? arjunaTm.getClass().getName() : "<null>"));
+            } catch (Throwable t) {
+                System.out.println("Arjuna TransactionManager not available: " + t.getClass().getName() + ": " + t.getMessage());
+            }
+        };
     }
 }
