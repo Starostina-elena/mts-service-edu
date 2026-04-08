@@ -1,0 +1,1009 @@
+{
+  "info": {
+    "name": "MTS Service — RBAC Authorization Tests",
+    "description": "Тесты авторизации для JAAS + HTTP Basic аутентификации с ролями USER, MANAGER, ADMIN.\n\nТестовые пользователи (пароль для всех: password):\n- user@test.com (USER)\n- manager@test.com (MANAGER)\n- admin@test.com (ADMIN)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "userEmail", "value": "user@test.com" },
+    { "key": "userPassword", "value": "password" },
+    { "key": "managerEmail", "value": "manager@test.com" },
+    { "key": "managerPassword", "value": "password" },
+    { "key": "adminEmail", "value": "admin@test.com" },
+    { "key": "adminPassword", "value": "password" }
+  ],
+  "item": [
+    {
+      "name": "1. Регистрация (публичный эндпоинт)",
+      "item": [
+        {
+          "name": "Регистрация нового пользователя (без авторизации) → 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser_{{$timestamp}}@test.com\",\n  \"name\": \"Test User\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Роль — USER', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.role).to.eql('USER');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Регистрация дубликата email → 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/users", "host": ["{{baseUrl}}"], "path": ["api", "users"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@test.com\",\n  \"name\": \"Duplicate\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Аутентификация",
+      "item": [
+        {
+          "name": "Без credentials → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/mobile", "host": ["{{baseUrl}}"], "path": ["catalog", "mobile"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Неверный пароль → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/mobile", "host": ["{{baseUrl}}"], "path": ["catalog", "mobile"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "user@test.com" },
+                { "key": "password", "value": "wrongpassword" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Несуществующий пользователь → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/mobile", "host": ["{{baseUrl}}"], "path": ["catalog", "mobile"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "nonexistent@test.com" },
+                { "key": "password", "value": "password" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Верные credentials (USER) → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/mobile", "host": ["{{baseUrl}}"], "path": ["catalog", "mobile"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Каталог (CATALOG_READ — все роли)",
+      "item": [
+        {
+          "name": "USER читает каталог → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/home?cityId=1", "host": ["{{baseUrl}}"], "path": ["catalog", "home"], "query": [{ "key": "cityId", "value": "1" }] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MANAGER читает каталог → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/mobile", "host": ["{{baseUrl}}"], "path": ["catalog", "mobile"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN читает каталог → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/catalog/devices", "host": ["{{baseUrl}}"], "path": ["catalog", "devices"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Поиск тарифов (USER) → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/catalog/search?query=интернет",
+              "host": ["{{baseUrl}}"],
+              "path": ["catalog", "search"],
+              "query": [{ "key": "query", "value": "интернет" }]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Заявки — создание (APPLICATION_CREATE — только USER)",
+      "item": [
+        {
+          "name": "USER создаёт заявку → 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tariffId\": 1,\n  \"address\": \"ул. Тестовая, д. 1\",\n  \"additionalServiceIds\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Статус заявки — PENDING', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('PENDING');",
+                  "  pm.collectionVariables.set('applicationId', body.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MANAGER создаёт заявку → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tariffId\": 1,\n  \"address\": \"ул. Тестовая, д. 1\",\n  \"additionalServiceIds\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии APPLICATION_CREATE', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN создаёт заявку → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tariffId\": 1,\n  \"address\": \"ул. Тестовая, д. 1\",\n  \"additionalServiceIds\": []\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии APPLICATION_CREATE', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Заявки — чтение",
+      "item": [
+        {
+          "name": "USER читает свои заявки (APPLICATION_READ_OWN) → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MANAGER читает все заявки (APPLICATION_READ_ALL) → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN читает все заявки (APPLICATION_READ_ALL) → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6. Заявки — одобрение (APPLICATION_APPROVE — MANAGER)",
+      "item": [
+        {
+          "name": "MANAGER одобряет заявку → 200",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/applications/{{applicationId}}/approve", "host": ["{{baseUrl}}"], "path": ["applications", "{{applicationId}}", "approve"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Статус — APPROVED', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('APPROVED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER пытается одобрить заявку → 403",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/applications/1/approve", "host": ["{{baseUrl}}"], "path": ["applications", "1", "approve"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии APPLICATION_APPROVE', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7. Заявки — отклонение (APPLICATION_REJECT — MANAGER)",
+      "item": [
+        {
+          "name": "MANAGER отклоняет заявку → 200",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/applications/{{applicationId}}/reject", "host": ["{{baseUrl}}"], "path": ["applications", "{{applicationId}}", "reject"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Недостаточно документов\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Статус — REJECTED', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql('REJECTED');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER пытается отклонить заявку → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/applications/1/reject", "host": ["{{baseUrl}}"], "path": ["applications", "1", "reject"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Тест\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии APPLICATION_REJECT', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8. Пополнение баланса (ACCOUNT_TOPUP — только USER)",
+      "item": [
+        {
+          "name": "USER пополняет баланс → 200",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/account/balance/top-up", "host": ["{{baseUrl}}"], "path": ["account", "balance", "top-up"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1000.00\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MANAGER пополняет баланс → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/account/balance/top-up", "host": ["{{baseUrl}}"], "path": ["account", "balance", "top-up"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1000.00\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии ACCOUNT_TOPUP', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN пополняет баланс → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/account/balance/top-up", "host": ["{{baseUrl}}"], "path": ["account", "balance", "top-up"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 1000.00\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии ACCOUNT_TOPUP', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Админ — управление тарифами (TARIFF_MANAGE — только ADMIN)",
+      "item": [
+        {
+          "name": "ADMIN создаёт тариф → 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/tariffs", "host": ["{{baseUrl}}"], "path": ["admin", "tariffs"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Тестовый тариф\",\n  \"category\": \"MOBILE\",\n  \"basePrice\": 500.00,\n  \"description\": \"Тариф для тестирования\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('newTariffId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER создаёт тариф → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/tariffs", "host": ["{{baseUrl}}"], "path": ["admin", "tariffs"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Хакерский тариф\",\n  \"category\": \"MOBILE\",\n  \"basePrice\": 0.01\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии TARIFF_MANAGE', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MANAGER создаёт тариф → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/tariffs", "host": ["{{baseUrl}}"], "path": ["admin", "tariffs"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Manager тариф\",\n  \"category\": \"MOBILE\",\n  \"basePrice\": 100.00\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии TARIFF_MANAGE', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN архивирует тариф → 200",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/tariffs/{{newTariffId}}/archive", "host": ["{{baseUrl}}"], "path": ["admin", "tariffs", "{{newTariffId}}", "archive"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10. Админ — управление сервисами (SERVICE_MANAGE — только ADMIN)",
+      "item": [
+        {
+          "name": "ADMIN создаёт сервис → 201",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/services", "host": ["{{baseUrl}}"], "path": ["admin", "services"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Антивирус\",\n  \"price\": 150.00,\n  \"description\": \"Защита от вирусов\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER создаёт сервис → 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/admin/services", "host": ["{{baseUrl}}"], "path": ["admin", "services"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Хак\",\n  \"price\": 0.01\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии SERVICE_MANAGE', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "11. Админ — переиндексация (SEARCH_REINDEX — только ADMIN)",
+      "item": [
+        {
+          "name": "ADMIN переиндексирует → 200",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/tariffs/reindex", "host": ["{{baseUrl}}"], "path": ["admin", "tariffs", "reindex"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{adminEmail}}" },
+                { "key": "password", "value": "{{adminPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "USER переиндексирует → 403",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/tariffs/reindex", "host": ["{{baseUrl}}"], "path": ["admin", "tariffs", "reindex"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии SEARCH_REINDEX', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "MANAGER переиндексирует → 403",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/admin/tariffs/reindex", "host": ["{{baseUrl}}"], "path": ["admin", "tariffs", "reindex"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{managerEmail}}" },
+                { "key": "password", "value": "{{managerPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 Forbidden — нет привилегии SEARCH_REINDEX', () => {",
+                  "  pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12. Баланс — чтение (любой аутентифицированный)",
+      "item": [
+        {
+          "name": "USER читает баланс → 200",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/account/balance", "host": ["{{baseUrl}}"], "path": ["account", "balance"] },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                { "key": "username", "value": "{{userEmail}}" },
+                { "key": "password", "value": "{{userPassword}}" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Без авторизации → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/account/balance", "host": ["{{baseUrl}}"], "path": ["account", "balance"] },
+            "auth": { "type": "noauth" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
