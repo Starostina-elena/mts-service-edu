@@ -118,10 +118,14 @@ public class XMLLoginModule implements LoginModule {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = factory.newDocumentBuilder();
-            // Загружаем XML из classpath
-            document = documentBuilder.parse(
-                    getClass().getClassLoader().getResourceAsStream(xmlPath));
 
+            String fsPath = System.getProperty(XmlUserStore.SYSTEM_PROPERTY);
+            if (fsPath != null) {
+                document = documentBuilder.parse(new java.io.File(fsPath));
+            } else {
+                document = documentBuilder.parse(
+                        getClass().getClassLoader().getResourceAsStream(xmlPath));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

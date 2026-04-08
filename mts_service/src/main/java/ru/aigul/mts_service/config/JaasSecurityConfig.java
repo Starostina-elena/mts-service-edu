@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import ru.aigul.mts_service.auth.RolePrincipal;
 import ru.aigul.mts_service.auth.RolePrivilegeMapper;
+import ru.aigul.mts_service.auth.XmlUserStore;
 
 import java.security.Principal;
 import java.util.HashSet;
@@ -32,9 +33,12 @@ public class JaasSecurityConfig {
     private String publicEndpoints;
 
     private final RolePrivilegeMapper rolePrivilegeMapper;
+    // injected to ensure XmlUserStore initializes first (sets system property before JAAS)
+    private final XmlUserStore xmlUserStore;
 
-    public JaasSecurityConfig(RolePrivilegeMapper rolePrivilegeMapper) {
+    public JaasSecurityConfig(RolePrivilegeMapper rolePrivilegeMapper, XmlUserStore xmlUserStore) {
         this.rolePrivilegeMapper = rolePrivilegeMapper;
+        this.xmlUserStore = xmlUserStore;
     }
 
     @Bean
