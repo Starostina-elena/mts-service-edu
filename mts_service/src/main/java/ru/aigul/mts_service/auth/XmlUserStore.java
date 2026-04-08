@@ -58,7 +58,6 @@ public class XmlUserStore {
         Transformer transformer = TransformerFactory.newInstance().newTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        // use Writer to avoid BOM that StreamResult(File) may produce
         try (OutputStream os = Files.newOutputStream(xmlPath);
              Writer writer = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
             transformer.transform(new DOMSource(doc), new StreamResult(writer));

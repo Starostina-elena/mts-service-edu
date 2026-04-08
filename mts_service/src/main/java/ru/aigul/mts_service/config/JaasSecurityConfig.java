@@ -33,7 +33,6 @@ public class JaasSecurityConfig {
     private String publicEndpoints;
 
     private final RolePrivilegeMapper rolePrivilegeMapper;
-    // injected to ensure XmlUserStore initializes first (sets system property before JAAS)
     private final XmlUserStore xmlUserStore;
 
     public JaasSecurityConfig(RolePrivilegeMapper rolePrivilegeMapper, XmlUserStore xmlUserStore) {
