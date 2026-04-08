@@ -1,7 +1,9 @@
 package ru.aigul.mts_service.config;
 
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -12,5 +14,22 @@ public class NarayanaConfig {
     public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
         return new TransactionTemplate(transactionManager);
     }
-}
 
+    @Bean
+    @Primary
+    public PlatformTransactionManager jtaTransactionManager() {
+        jakarta.transaction.TransactionManager tm = com.arjuna.ats.jta.TransactionManager.transactionManager();
+        jakarta.transaction.UserTransaction ut = com.arjuna.ats.jta.UserTransaction.userTransaction();
+
+        org.springframework.transaction.jta.JtaTransactionManager jtaTm = new org.springframework.transaction.jta.JtaTransactionManager();
+        jtaTm.setTransactionManager(tm);
+        jtaTm.setUserTransaction(ut);
+        jtaTm.setAllowCustomIsolationLevels(true);
+        return jtaTm;
+    }
+
+    @Bean
+    public CommandLineRunner printTxManager(PlatformTransactionManager txManager) {
+        return args -> System.out.println("PlatformTransactionManager bean: " + txManager.getClass().getName());
+    }
+}
