@@ -11,11 +11,10 @@ import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-public class XMLLoginModule  implements LoginModule {
+public class XMLLoginModule implements LoginModule {
     private Subject subject;
     private CallbackHandler callbackHandler;
     private Map<String, ?> sharedState;
@@ -33,7 +32,8 @@ public class XMLLoginModule  implements LoginModule {
     private String password;
 
     @Override
-    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
+    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState,
+            Map<String, ?> options) {
         this.subject = subject;
         this.callbackHandler = callbackHandler;
         this.sharedState = sharedState;
@@ -53,9 +53,9 @@ public class XMLLoginModule  implements LoginModule {
         callbacks[1] = new PasswordCallback("Password: ", false);
         try {
             callbackHandler.handle(callbacks);
-        }catch(IOException e){
+        } catch (IOException e) {
             throw new LoginException("IOException: " + e.getMessage());
-        } catch (UnsupportedCallbackException e){
+        } catch (UnsupportedCallbackException e) {
             throw new LoginException("UnsupportedCallbackException: " + e.getMessage());
         }
 
@@ -65,7 +65,7 @@ public class XMLLoginModule  implements LoginModule {
 
         if (authenticateFromXml(username, password)) {
             loginSucceeded = true;
-        }else{
+        } else {
             loginSucceeded = false;
             throw new LoginException("Login failed");
         }
@@ -75,7 +75,7 @@ public class XMLLoginModule  implements LoginModule {
 
     @Override
     public boolean commit() throws LoginException {
-        if (!loginSucceeded){
+        if (!loginSucceeded) {
             return false;
         }
 
@@ -90,13 +90,13 @@ public class XMLLoginModule  implements LoginModule {
 
     @Override
     public boolean abort() throws LoginException {
-        if (!loginSucceeded){
+        if (!loginSucceeded) {
             return false;
         }
 
-        if (commitSucceeded){
+        if (commitSucceeded) {
             logout();
-        } else{
+        } else {
             loginSucceeded = false;
         }
 
@@ -114,55 +114,61 @@ public class XMLLoginModule  implements LoginModule {
         return true;
     }
 
-    public void loadXMLDocument(){
-        try{
+    public void loadXMLDocument() {
+        try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder documentBuilder = factory.newDocumentBuilder();
-            document = documentBuilder.parse(new File(xmlPath));
 
-        }catch (Exception e){
+            String fsPath = System.getProperty(XmlUserStore.SYSTEM_PROPERTY);
+            if (fsPath != null) {
+                document = documentBuilder.parse(new java.io.File(fsPath));
+            } else {
+                document = documentBuilder.parse(
+                        getClass().getClassLoader().getResourceAsStream(xmlPath));
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public boolean authenticateFromXml(String username, String password){
-        if (document == null){
+    public boolean authenticateFromXml(String username, String password) {
+        if (document == null) {
             System.err.println("Document is null");
             return false;
         }
 
-        try{
+        try {
             NodeList nodes = document.getElementsByTagName("user");
-            for (int i = 0; i < nodes.getLength(); i++){
+            for (int i = 0; i < nodes.getLength(); i++) {
                 Element el = (Element) nodes.item(i);
                 String xmlEmail = el.getAttribute("email");
                 String xmlPasswordHash = el.getAttribute("passwordHash");
-                if (xmlEmail.equals(username) && passwordEncoder.matches(password, xmlPasswordHash)){
+                if (xmlEmail.equals(username) && passwordEncoder.matches(password, xmlPasswordHash)) {
                     return true;
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    public String getRoleFromXML(String username){
-        if (document == null){
+    public String getRoleFromXML(String username) {
+        if (document == null) {
             System.err.println("Document is null");
             return null;
         }
 
         try {
             NodeList nodes = document.getElementsByTagName("user");
-            for (int i = 0; i < nodes.getLength(); i++){
+            for (int i = 0; i < nodes.getLength(); i++) {
                 Element el = (Element) nodes.item(i);
                 String xmlEmail = el.getAttribute("email");
-                if (xmlEmail.equals(username)){
+                if (xmlEmail.equals(username)) {
                     return el.getAttribute("role");
                 }
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;

@@ -3,8 +3,9 @@ package ru.aigul.mts_service.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.authentication.jaas.AuthorityGranter;
-import org.springframework.security.authentication.jaas.DefaultJaasAuthenticationProvider;
+import org.springframework.security.authentication.jaas.JaasAuthenticationProvider;
 import org.springframework.security.authentication.jaas.JaasNameCallbackHandler;
 import org.springframework.security.authentication.jaas.JaasPasswordCallbackHandler;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import ru.aigul.mts_service.auth.RolePrincipal;
 import ru.aigul.mts_service.auth.RolePrivilegeMapper;
+import ru.aigul.mts_service.auth.XmlUserStore;
 
 import java.security.Principal;
 import java.util.HashSet;
@@ -31,9 +33,11 @@ public class JaasSecurityConfig {
     private String publicEndpoints;
 
     private final RolePrivilegeMapper rolePrivilegeMapper;
+    private final XmlUserStore xmlUserStore;
 
-    public JaasSecurityConfig(RolePrivilegeMapper rolePrivilegeMapper) {
+    public JaasSecurityConfig(RolePrivilegeMapper rolePrivilegeMapper, XmlUserStore xmlUserStore) {
         this.rolePrivilegeMapper = rolePrivilegeMapper;
+        this.xmlUserStore = xmlUserStore;
     }
 
     @Bean
@@ -42,21 +46,19 @@ public class JaasSecurityConfig {
     }
 
     @Bean
-    public DefaultJaasAuthenticationProvider jaasAuthenticationProvider() {
-        DefaultJaasAuthenticationProvider provider = new DefaultJaasAuthenticationProvider();
+    public JaasAuthenticationProvider jaasAuthenticationProvider() throws Exception {
+        JaasAuthenticationProvider provider = new JaasAuthenticationProvider();
 
-        System.setProperty("java.security.auth.login.config",
-                "src/main/resources/jaas.conf");
-
+        provider.setLoginConfig(new ClassPathResource("jaas.conf"));
         provider.setLoginContextName("MyApplicationHTTP");
 
         provider.setCallbackHandlers(
-                new org.springframework.security.authentication.jaas.JaasAuthenticationCallbackHandler[]{
+                new org.springframework.security.authentication.jaas.JaasAuthenticationCallbackHandler[] {
                         new JaasNameCallbackHandler(),
                         new JaasPasswordCallbackHandler()
                 });
 
-        provider.setAuthorityGranters(new AuthorityGranter[]{
+        provider.setAuthorityGranters(new AuthorityGranter[] {
                 new RolePrivilegeAuthorityGranter(rolePrivilegeMapper)
         });
 
@@ -72,13 +74,12 @@ public class JaasSecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(publicPostEndpoints).permitAll()
                         .requestMatchers(publicEndpoints).permitAll()
-                        .anyRequest().authenticated()
-                )
-                .httpBasic(httpBasic -> {});
+                        .anyRequest().authenticated())
+                .httpBasic(httpBasic -> {
+                });
 
         return http.build();
     }
-
 
     private static class RolePrivilegeAuthorityGranter implements AuthorityGranter {
 

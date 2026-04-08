@@ -2,18 +2,15 @@ package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
-import ru.aigul.mts_service.exception.ApplicationNotFoundException;
-import ru.aigul.mts_service.exception.InsufficientFundsException;
-import ru.aigul.mts_service.exception.InvalidApplicationStatusException;
-import ru.aigul.mts_service.exception.AccessDeniedException;
-import ru.aigul.mts_service.exception.TariffNotFoundException;
-import ru.aigul.mts_service.exception.UserNotFoundException;
+import ru.aigul.mts_service.exception.*;
+
 import ru.aigul.mts_service.mapper.ApplicationMapper;
 import ru.aigul.mts_service.model.*;
 import ru.aigul.mts_service.repository.*;
@@ -50,9 +47,10 @@ public class ApplicationService {
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public ApplicationDto create(Long userId, ApplicationCreateDto dto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+    public ApplicationDto create(String email, ApplicationCreateDto dto) {
+        User user = userService.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(email));
+        Long userId = user.getId();
 
         Tariff tariff = tariffRepository.findById(dto.getTariffId())
                 .orElseThrow(() -> new TariffNotFoundException(dto.getTariffId()));
@@ -95,7 +93,13 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public CursorPage<ApplicationDto> list(Long userId, ApplicationStatus status, Long after, int limit) {
+    public CursorPage<ApplicationDto> list(Authentication auth, ApplicationStatus status, Long after, int limit) {
+        Long userId = null;
+        if (!auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("APPLICATION_READ_ALL"))) {
+            userId = userService.findByEmail(auth.getName())
+                    .orElseThrow(() -> new UserNotFoundException(auth.getName()))
+                    .getId();
+        }
         List<Application> raw = applicationRepository.findAllFiltered(userId, status, after, Limit.of(limit + 1));
         return CursorPage.of(raw, limit, applicationMapper::toDto, Application::getId);
     }
