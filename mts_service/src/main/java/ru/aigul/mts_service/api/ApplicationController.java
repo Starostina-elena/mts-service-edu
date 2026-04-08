@@ -12,6 +12,8 @@ import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.model.ApplicationStatus;
 import ru.aigul.mts_service.service.ApplicationService;
+import ru.aigul.mts_service.service.UserService;
+import ru.aigul.mts_service.exception.UserNotFoundException;
 
 @RestController
 @RequestMapping("/applications")
@@ -19,6 +21,7 @@ import ru.aigul.mts_service.service.ApplicationService;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
+    private final UserService userService;
 
     @Value("${app.pagination.default-limit}")
     private int defaultLimit;
@@ -28,7 +31,9 @@ public class ApplicationController {
     @PreAuthorize("hasAuthority('APPLICATION_CREATE')")
     public ApplicationDto create(Authentication auth,
                                  @Valid @RequestBody ApplicationCreateDto dto) {
-        return applicationService.create(auth.getName(), dto);
+        String email = auth.getName();
+        Long userId = userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email)).getId();
+        return applicationService.create(userId, dto);
     }
 
     @GetMapping
@@ -38,7 +43,9 @@ public class ApplicationController {
             @RequestParam(required = false) ApplicationStatus status,
             @RequestParam(required = false) Long after,
             @RequestParam(required = false) Integer limit) {
-        return applicationService.list(auth, status, after, limit != null ? limit : defaultLimit);
+        String email = auth.getName();
+        Long userId = userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email)).getId();
+        return applicationService.list(userId, status, after, limit != null ? limit : defaultLimit);
     }
 
     @GetMapping("/{applicationId}")
@@ -49,14 +56,19 @@ public class ApplicationController {
 
     @PostMapping("/{applicationId}/approve")
     @PreAuthorize("hasAuthority('APPLICATION_APPROVE')")
-    public ResponseEntity<ApplicationDto> approve(@PathVariable Long applicationId) {
-        return ResponseEntity.ok(applicationService.approve(applicationId));
+    public ResponseEntity<ApplicationDto> approve(@PathVariable Long applicationId, Authentication auth) {
+        String email = auth.getName();
+        Long userId = userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email)).getId();
+        return ResponseEntity.ok(applicationService.approve(userId, applicationId));
     }
 
     @PostMapping("/{applicationId}/reject")
     @PreAuthorize("hasAuthority('APPLICATION_REJECT')")
     public ResponseEntity<ApplicationDto> reject(@PathVariable Long applicationId,
-                                                  @Valid @RequestBody ApplicationRejectDto dto) {
-        return ResponseEntity.ok(applicationService.reject(applicationId, dto));
+                                                  @Valid @RequestBody ApplicationRejectDto dto,
+                                                  Authentication auth) {
+        String email = auth.getName();
+        Long userId = userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException(email)).getId();
+        return ResponseEntity.ok(applicationService.reject(userId, applicationId, dto));
     }
 }

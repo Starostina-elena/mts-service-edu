@@ -2,7 +2,6 @@ package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,10 +46,9 @@ public class ApplicationService {
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public ApplicationDto create(String email, ApplicationCreateDto dto) {
-        User user = userService.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(email));
-        Long userId = user.getId();
+    public ApplicationDto create(Long userId, ApplicationCreateDto dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         Tariff tariff = tariffRepository.findById(dto.getTariffId())
                 .orElseThrow(() -> new TariffNotFoundException(dto.getTariffId()));
@@ -93,14 +91,14 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public CursorPage<ApplicationDto> list(Authentication auth, ApplicationStatus status, Long after, int limit) {
-        Long userId = null;
-        if (!auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("APPLICATION_READ_ALL"))) {
-            userId = userService.findByEmail(auth.getName())
-                    .orElseThrow(() -> new UserNotFoundException(auth.getName()))
-                    .getId();
+    public CursorPage<ApplicationDto> list(Long currentUserId, ApplicationStatus status, Long after, int limit) {
+        Long filterUserId = currentUserId;
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new UserNotFoundException(currentUserId));
+        if (currentUser.getRole() == Role.MANAGER) {
+            filterUserId = null;
         }
-        List<Application> raw = applicationRepository.findAllFiltered(userId, status, after, Limit.of(limit + 1));
+        List<Application> raw = applicationRepository.findAllFiltered(filterUserId, status, after, Limit.of(limit + 1));
         return CursorPage.of(raw, limit, applicationMapper::toDto, Application::getId);
     }
 
