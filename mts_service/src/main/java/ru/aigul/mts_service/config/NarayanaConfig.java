@@ -46,4 +46,13 @@ public class NarayanaConfig {
             }
         };
     }
+
+    @Bean(destroyMethod = "shutdown")
+    public java.util.concurrent.ScheduledExecutorService scheduledExecutorService() {
+        return java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "scheduled-executor");
+            t.setDaemon(true);
+            return t;
+        });
+    }
 }

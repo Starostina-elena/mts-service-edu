@@ -25,6 +25,7 @@ public class BalanceService {
     private final UserService userService;
     private final BalanceRepository balanceRepository;
     private final TransactionTemplate transactionTemplate;
+    private final java.util.concurrent.ScheduledExecutorService scheduledExecutorService;
 
     @Value("${payments.base-url}")
     private String paymentsBaseUrl;
@@ -82,6 +83,16 @@ public class BalanceService {
         String paymentUrl = base + paymentId;
 
         log.debug("PaymentUrl: {}", paymentUrl);
+
+        scheduledExecutorService.schedule(() -> {
+            try {
+                log.info("Scheduled top-up started for email={} amount={}", email, amount);
+                applyTopUpForUserEmail(email, amount);
+                log.info("Scheduled top-up finished for email={} amount={}", email, amount);
+            } catch (Exception e) {
+                log.error("Scheduled top-up failed for email={}, amount={}: {}", email, amount, e.getMessage(), e);
+            }
+        }, 5, java.util.concurrent.TimeUnit.SECONDS);
 
         return Optional.of(paymentUrl);
     }
