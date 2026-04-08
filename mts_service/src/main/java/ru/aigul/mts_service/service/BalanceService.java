@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.aigul.mts_service.dto.BalanceResponse;
+import ru.aigul.mts_service.exception.UserNotFoundException;
 import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.model.User;
 import ru.aigul.mts_service.repository.BalanceRepository;
@@ -22,6 +24,7 @@ public class BalanceService {
 
     private final UserService userService;
     private final BalanceRepository balanceRepository;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("${payments.base-url}")
     private String paymentsBaseUrl;
@@ -37,6 +40,33 @@ public class BalanceService {
 
         User user = userOpt.get();
         return balanceRepository.findByUserId(user.getId());
+    }
+
+    public BalanceResponse applyTopUpForUserEmail(String email, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be positive");
+        }
+
+        User user = userService.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(email));
+
+        Balance bal = transactionTemplate.execute(status -> {
+            Optional<Balance> bOpt = balanceRepository.findByUserIdForUpdate(user.getId());
+            Balance b;
+            if (bOpt.isPresent()) {
+                b = bOpt.get();
+                b.setAmount(b.getAmount().add(amount));
+            } else {
+                b = new Balance();
+                b.setUser(user);
+                b.setAmount(amount);
+            }
+            return balanceRepository.save(b);
+        });
+
+        OffsetDateTime updated = bal.getUpdatedAt() != null ? bal.getUpdatedAt().atOffset(ZoneOffset.UTC) : OffsetDateTime.now(ZoneOffset.UTC);
+        BigDecimal amt = bal.getAmount() != null ? bal.getAmount() : BigDecimal.ZERO;
+        return new BalanceResponse(amt, currencyCode, updated);
     }
 
     public Optional<String> createTopUpPayment(String email, BigDecimal amount) {

@@ -5,6 +5,7 @@ import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.exception.ApplicationNotFoundException;
@@ -36,6 +37,7 @@ public class ApplicationService {
     private final ServiceRepository serviceRepository;
     private final ApplicationMapper applicationMapper;
     private final UserService userService;
+    private final TransactionTemplate transactionTemplate;
 
     public List<Application> getApplicationsForUserEmail(String email) {
         Optional<User> userOpt = userService.findByEmail(email);
@@ -105,7 +107,6 @@ public class ApplicationService {
         return applicationMapper.toDetailDto(application);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     public ApplicationDto approve(Long userId, Long applicationId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -113,18 +114,41 @@ public class ApplicationService {
             throw new AccessDeniedException("Only manager can approve applications");
         }
 
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
+        return transactionTemplate.execute(status -> {
+            Application application = applicationRepository.findByIdForUpdate(applicationId)
+                    .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
 
-        if (application.getStatus() != ApplicationStatus.PENDING) {
-            throw new InvalidApplicationStatusException("Application already processed");
-        }
+            if (application.getStatus() != ApplicationStatus.PENDING) {
+                throw new InvalidApplicationStatusException("Application already processed");
+            }
 
-        application.setStatus(ApplicationStatus.APPROVED);
-        application = applicationRepository.save(application);
-        return applicationMapper.toDto(application);
+            BigDecimal price = application.getTariff().getBasePrice();
+            if (price == null) {
+                price = BigDecimal.ZERO;
+            }
+            if (application.getAdditionalServices() != null && !application.getAdditionalServices().isEmpty()) {
+                for (ru.aigul.mts_service.model.Service s : application.getAdditionalServices()) {
+                    if (s.getPrice() != null) price = price.add(s.getPrice());
+                }
+            }
+
+            Long targetUserId = application.getUser().getId();
+            Balance balance = balanceRepository.findByUserIdForUpdate(targetUserId)
+                    .orElseThrow(() -> new InsufficientFundsException());
+
+            if (balance.getAmount().compareTo(price) < 0) {
+                throw new InsufficientFundsException();
+            }
+
+            balance.setAmount(balance.getAmount().subtract(price));
+            balanceRepository.save(balance);
+
+            application.setStatus(ApplicationStatus.APPROVED);
+            application = applicationRepository.save(application);
+            return applicationMapper.toDto(application);
+        });
     }
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+
     public ApplicationDto reject(Long userId, Long applicationId, ApplicationRejectDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -132,16 +156,18 @@ public class ApplicationService {
             throw new AccessDeniedException("Only manager can reject applications");
         }
 
-        Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
+        return transactionTemplate.execute(status -> {
+            Application application = applicationRepository.findByIdForUpdate(applicationId)
+                    .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
 
-        if (application.getStatus() != ApplicationStatus.PENDING) {
-            throw new InvalidApplicationStatusException("Application already processed");
-        }
+            if (application.getStatus() != ApplicationStatus.PENDING) {
+                throw new InvalidApplicationStatusException("Application already processed");
+            }
 
-        application.setStatus(ApplicationStatus.REJECTED);
-        application.setRejectReason(dto.getReason());
-        application = applicationRepository.save(application);
-        return applicationMapper.toDto(application);
+            application.setStatus(ApplicationStatus.REJECTED);
+            application.setRejectReason(dto.getReason());
+            application = applicationRepository.save(application);
+            return applicationMapper.toDto(application);
+        });
     }
 }
