@@ -15,9 +15,9 @@ public class NarayanaConfig {
         return new TransactionTemplate(transactionManager);
     }
 
-    @Bean
+    @Bean(name = "transactionManager")
     @Primary
-    public PlatformTransactionManager jtaTransactionManager() {
+    public PlatformTransactionManager transactionManager() {
         jakarta.transaction.TransactionManager tm = com.arjuna.ats.jta.TransactionManager.transactionManager();
         jakarta.transaction.UserTransaction ut = com.arjuna.ats.jta.UserTransaction.userTransaction();
 
