@@ -18,6 +18,25 @@ services:
       retries: 5
     command: ["postgres", "-c", "log_statement=all", "-c", "log_min_messages=DEBUG3"]
 
+  oracle-xe:
+    image: gvenzl/oracle-xe:18-slim
+    container_name: mts_service_oracle
+    platform: linux/amd64
+    environment:
+      - ORACLE_PASSWORD=oracle
+      - ORACLE_CHARACTERSET=AL32UTF8
+    ports:
+      - "1521:1521"
+    volumes:
+      - ./docker/oracle/init:/opt/oracle/scripts/setup:ro
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'select 1 from dual;' | sqlplus -s system/oracle@//localhost:1521/XEPDB1 | grep -q 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
   app:
     build: .
     container_name: mts_service_app
@@ -68,3 +87,4 @@ services:
 volumes:
   db_data:
   esdata:
+  oracle_data:

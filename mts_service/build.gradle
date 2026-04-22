@@ -25,6 +25,9 @@ repositories {
     maven {
         url 'https://repository.jboss.org/nexus/content/groups/public/'
     }
+    flatDir {
+        dirs 'lib'
+    }
 }
 
 dependencies {
@@ -37,10 +40,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-flyway'
     implementation 'org.flywaydb:flyway-database-postgresql'
     implementation 'org.jboss.narayana.jta:narayana-jta:7.2.2.Final'
+    // implementation 'org.springframework.boot:spring-boot-starter-jta-narayana'
+    implementation 'dev.snowdrop:narayana-spring-boot-starter:3.1.0'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
-    runtimeOnly 'org.postgresql:postgresql'
+    implementation 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'

@@ -1,5 +1,6 @@
 package ru.aigul.mts_service.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,8 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.aigul.mts_service.dto.BalanceResponse;
 import ru.aigul.mts_service.exception.UserNotFoundException;
-import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.model.User;
+import ru.aigul.mts_service.oracle.model.BalanceOracle;
+import ru.aigul.mts_service.oracle.repository.OracleBalanceRepository;
 import ru.aigul.mts_service.repository.BalanceRepository;
 
 import java.math.BigDecimal;
@@ -24,6 +26,7 @@ public class BalanceService {
 
     private final UserService userService;
     private final BalanceRepository balanceRepository;
+    private final Optional<OracleBalanceRepository> oracleBalanceRepository;
     private final TransactionTemplate transactionTemplate;
     private final java.util.concurrent.ScheduledExecutorService scheduledExecutorService;
 
@@ -33,17 +36,25 @@ public class BalanceService {
     @Value("${app.currency.code}")
     private String currencyCode;
 
-    public Optional<Balance> findBalanceForUserEmail(String email) {
+    public Optional<BalanceOracle> findBalanceForUserEmail(String email) {
         Optional<User> userOpt = userService.findByEmail(email);
         if (userOpt.isEmpty()) {
             return Optional.empty();
         }
 
         User user = userOpt.get();
-        return balanceRepository.findByUserId(user.getId());
+        if (oracleBalanceRepository.isEmpty()) {
+            return Optional.empty();
+        }
+        return oracleBalanceRepository.get().findByUserId(user.getId());
     }
 
+    @Transactional
     public BalanceResponse applyTopUpForUserEmail(String email, BigDecimal amount) {
+        if (oracleBalanceRepository.isEmpty()) {
+            throw new IllegalStateException("Oracle balance store is not configured");
+        }
+
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Amount must be positive");
         }
@@ -51,27 +62,32 @@ public class BalanceService {
         User user = userService.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(email));
 
-        Balance bal = transactionTemplate.execute(status -> {
-            Optional<Balance> bOpt = balanceRepository.findByUserIdForUpdate(user.getId());
-            Balance b;
-            if (bOpt.isPresent()) {
-                b = bOpt.get();
-                b.setAmount(b.getAmount().add(amount));
-            } else {
-                b = new Balance();
-                b.setUser(user);
-                b.setAmount(amount);
-            }
-            return balanceRepository.save(b);
-        });
+        Optional<BalanceOracle> balOpt = oracleBalanceRepository.get().findByUserIdForUpdate(user.getId());
+        BalanceOracle bal;
+        if (balOpt.isPresent()) {
+            bal = balOpt.get();
+            bal.setAmount(bal.getAmount().add(amount));
+        } else {
+            bal = new BalanceOracle();
+            bal.setUserId(user.getId());
+            bal.setAmount(amount);
+        }
+        bal = oracleBalanceRepository.get().save(bal);
 
-        OffsetDateTime updated = bal.getUpdatedAt() != null ? bal.getUpdatedAt().atOffset(ZoneOffset.UTC) : OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime updated = Optional.ofNullable(bal.getUpdatedAt())
+                .map(d -> d.atOffset(ZoneOffset.UTC))
+                .orElse(OffsetDateTime.now(ZoneOffset.UTC));
         BigDecimal amt = bal.getAmount() != null ? bal.getAmount() : BigDecimal.ZERO;
         return new BalanceResponse(amt, currencyCode, updated);
     }
 
     public Optional<String> createTopUpPayment(String email, BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return Optional.empty();
+        }
+
+        if (oracleBalanceRepository.isEmpty()) {
+            log.warn("Oracle balance repository not configured: createTopUpPayment will not schedule top-up");
             return Optional.empty();
         }
 
@@ -98,14 +114,16 @@ public class BalanceService {
     }
 
     public BalanceResponse getBalanceResponseForUserEmail(String email) {
-        Optional<Balance> balanceOpt = findBalanceForUserEmail(email);
+        Optional<BalanceOracle> balanceOpt = findBalanceForUserEmail(email);
 
         if (balanceOpt.isEmpty()) {
             return new BalanceResponse(BigDecimal.ZERO, currencyCode, OffsetDateTime.now(ZoneOffset.UTC));
         }
 
-        Balance b = balanceOpt.get();
-        OffsetDateTime updated = b.getUpdatedAt() != null ? b.getUpdatedAt().atOffset(ZoneOffset.UTC) : OffsetDateTime.now(ZoneOffset.UTC);
+        BalanceOracle b = balanceOpt.get();
+        OffsetDateTime updated = Optional.ofNullable(b.getUpdatedAt())
+                .map(d -> d.atOffset(ZoneOffset.UTC))
+                .orElse(OffsetDateTime.now(ZoneOffset.UTC));
         BigDecimal amount = b.getAmount() != null ? b.getAmount() : BigDecimal.ZERO;
         return new BalanceResponse(amount, currencyCode, updated);
     }

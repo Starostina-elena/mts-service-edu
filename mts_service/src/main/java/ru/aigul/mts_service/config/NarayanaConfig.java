@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.boot.jta.narayana.NarayanaXADataSourceWrapper;
 
 @Configuration
 public class NarayanaConfig {
@@ -45,6 +46,11 @@ public class NarayanaConfig {
                 System.out.println("Arjuna TransactionManager not available: " + t.getClass().getName() + ": " + t.getMessage());
             }
         };
+    }
+
+    @Bean
+    public NarayanaXADataSourceWrapper narayanaXADataSourceWrapper() {
+        return new NarayanaXADataSourceWrapper();
     }
 
     @Bean(destroyMethod = "shutdown")
