@@ -16,26 +16,27 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    command: ["postgres", "-c", "log_statement=all", "-c", "log_min_messages=DEBUG3"]
+    command: ["postgres", "-c", "max_prepared_transactions=10", "-c", "log_statement=all", "-c", "log_min_messages=DEBUG3"]
 
-  oracle-xe:
-    image: gvenzl/oracle-xe:18-slim
-    container_name: mts_service_oracle
-    platform: linux/amd64
+  balance-db:
+    image: postgres:15
+    container_name: mts_service_balance_db
     environment:
-      - ORACLE_PASSWORD=oracle
-      - ORACLE_CHARACTERSET=AL32UTF8
-    ports:
-      - "1521:1521"
+      POSTGRES_USER: ${BALANCE_DB_USER:-balance_user}
+      POSTGRES_PASSWORD: ${BALANCE_DB_PASSWORD:-balance_pass}
+      POSTGRES_DB: ${BALANCE_DB_NAME:-balance_db}
     volumes:
-      - ./docker/oracle/init:/opt/oracle/scripts/setup:ro
-      - oracle_data:/opt/oracle/oradata
+      - balance_db_data:/var/lib/postgresql
+      - ./docker/postgres/init-balance:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5433:5432"
     healthcheck:
-      test: ["CMD", "bash", "-c", "echo 'select 1 from dual;' | sqlplus -s system/oracle@//localhost:1521/XEPDB1 | grep -q 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 10
+      test: ["CMD-SHELL", "pg_isready -U ${BALANCE_DB_USER:-balance_user} -d ${BALANCE_DB_NAME:-balance_db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
+    command: ["postgres", "-c", "max_prepared_transactions=10", "-c", "log_statement=all", "-c", "log_min_messages=DEBUG3"]
 
   app:
     build: .
@@ -43,10 +44,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      balance-db:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Secondary (balance) Postgres datasource used where Oracle was previously configured
+      SPRING_DATASOURCE_ORACLE_URL: jdbc:postgresql://balance-db:5432/${BALANCE_DB_NAME:-balance_db}
+      SPRING_DATASOURCE_ORACLE_USERNAME: ${BALANCE_DB_USER:-balance_user}
+      SPRING_DATASOURCE_ORACLE_PASSWORD: ${BALANCE_DB_PASSWORD:-balance_pass}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       ELASTICSEARCH_URL: http://elasticsearch:9200
     ports:
@@ -88,3 +95,4 @@ volumes:
   db_data:
   esdata:
   oracle_data:
+  balance_db_data:

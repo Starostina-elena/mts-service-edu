@@ -25,6 +25,12 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler({org.springframework.dao.DataAccessResourceFailureException.class, org.springframework.jdbc.CannotGetJdbcConnectionException.class})
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErrorResponse handleDatabaseUnavailable(Exception ex) {
+        return new ErrorResponse("Service temporarily unavailable: database connection failed");
+    }
+
     @ExceptionHandler({TariffNotFoundException.class, ApplicationNotFoundException.class, UserNotFoundException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFound(RuntimeException ex) {

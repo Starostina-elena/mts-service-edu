@@ -48,4 +48,35 @@ public class DistributedTransactionService {
         pgBalanceRepo.save(pg);
 
     }
+
+    @Transactional
+    public void transferFromPrimaryToOracle(Long userId, BigDecimal amount) {
+        if (oracleBalanceRepo.isEmpty()) {
+            throw new IllegalStateException("Oracle balance store is not configured");
+        }
+
+        Optional<Balance> pgOpt = pgBalanceRepo.findByUserIdForUpdate(userId);
+        Optional<BalanceOracle> oraOpt = oracleBalanceRepo.get().findByUserIdForUpdate(userId);
+
+        if (pgOpt.isEmpty() || oraOpt.isEmpty()) {
+            throw new IllegalArgumentException("Balance not found in one of systems for userId=" + userId);
+        }
+
+        Balance pg = pgOpt.get();
+        BalanceOracle oa = oraOpt.get();
+
+        if (pg.getAmount().compareTo(amount) < 0) {
+            throw new IllegalStateException("Insufficient funds in primary (Postgres) balance");
+        }
+
+        pg.setAmount(pg.getAmount().subtract(amount));
+        if (oa.getAmount() == null) {
+            oa.setAmount(amount);
+        } else {
+            oa.setAmount(oa.getAmount().add(amount));
+        }
+
+        pgBalanceRepo.save(pg);
+        oracleBalanceRepo.get().save(oa);
+    }
 }

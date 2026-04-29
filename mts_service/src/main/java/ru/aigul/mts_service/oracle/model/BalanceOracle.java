@@ -1,33 +1,56 @@
 package ru.aigul.mts_service.oracle.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "BALANCE", schema = "APP_USER")
-@Data
+@Table(name = "balances")
 public class BalanceOracle {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
     private Long id;
 
-    @NotNull
-    @Column(name = "USER_ID", nullable = false)
     private Long userId;
 
-    @NotNull
-    @Column(name = "AMOUNT", nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @CreationTimestamp
-    @Column(name = "UPDATED_AT")
-    private LocalDateTime updatedAt;
-}
+    private OffsetDateTime updatedAt;
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public OffsetDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(OffsetDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+}

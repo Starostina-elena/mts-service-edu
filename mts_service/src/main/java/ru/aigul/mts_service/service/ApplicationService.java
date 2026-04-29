@@ -13,6 +13,8 @@ import ru.aigul.mts_service.exception.*;
 import ru.aigul.mts_service.mapper.ApplicationMapper;
 import ru.aigul.mts_service.model.*;
 import ru.aigul.mts_service.repository.*;
+import ru.aigul.mts_service.oracle.repository.OracleBalanceRepository;
+import ru.aigul.mts_service.oracle.model.BalanceOracle;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -21,6 +23,9 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Optional;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ApplicationService {
@@ -29,7 +34,7 @@ public class ApplicationService {
     private final TariffRepository tariffRepository;
     private final TariffCityPriceRepository tariffCityPriceRepository;
     private final UserRepository userRepository;
-    private final BalanceRepository balanceRepository;
+    private final OracleBalanceRepository oracleBalanceRepository;
     private final ServiceRepository serviceRepository;
     private final ApplicationMapper applicationMapper;
     private final UserService userService;
@@ -73,9 +78,10 @@ public class ApplicationService {
             }
         }
 
-        Balance balance = balanceRepository.findByUserId(userId)
+        // use Oracle balance as the source of truth
+        BalanceOracle oracleBal = oracleBalanceRepository.findByUserId(userId)
                 .orElseThrow(() -> new InsufficientFundsException());
-        if (balance.getAmount().compareTo(totalPrice) < 0) {
+        if (oracleBal.getAmount().compareTo(totalPrice) < 0) {
             throw new InsufficientFundsException();
         }
 
@@ -125,9 +131,7 @@ public class ApplicationService {
             }
 
             BigDecimal price = application.getTariff().getBasePrice();
-            if (price == null) {
-                price = BigDecimal.ZERO;
-            }
+            if (price == null) price = BigDecimal.ZERO;
             if (application.getAdditionalServices() != null && !application.getAdditionalServices().isEmpty()) {
                 for (ru.aigul.mts_service.model.Service s : application.getAdditionalServices()) {
                     if (s.getPrice() != null) price = price.add(s.getPrice());
@@ -135,18 +139,22 @@ public class ApplicationService {
             }
 
             Long targetUserId = application.getUser().getId();
-            Balance balance = balanceRepository.findByUserIdForUpdate(targetUserId)
+
+            // Decrease balance in Oracle (participating XA resource)
+            BalanceOracle oa = oracleBalanceRepository.findByUserIdForUpdate(targetUserId)
                     .orElseThrow(() -> new InsufficientFundsException());
 
-            if (balance.getAmount().compareTo(price) < 0) {
+            if (oa.getAmount().compareTo(price) < 0) {
                 throw new InsufficientFundsException();
             }
 
-            balance.setAmount(balance.getAmount().subtract(price));
-            balanceRepository.save(balance);
+            oa.setAmount(oa.getAmount().subtract(price));
+            oracleBalanceRepository.save(oa);
 
+            // Update application status in Postgres (another XA resource)
             application.setStatus(ApplicationStatus.APPROVED);
             application = applicationRepository.save(application);
+
             return applicationMapper.toDto(application);
         });
     }
