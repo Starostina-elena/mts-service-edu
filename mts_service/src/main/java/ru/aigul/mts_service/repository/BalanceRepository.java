@@ -1,4 +1,4 @@
-package ru.aigul.mts_service.repository;
+package ru.aigul.mts_service.balance.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;

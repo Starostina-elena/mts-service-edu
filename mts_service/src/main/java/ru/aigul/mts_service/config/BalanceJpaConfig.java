@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@EnableJpaRepositories(basePackages = "ru.aigul.mts_service.oracle.repository",
+@EnableJpaRepositories(basePackages = "ru.aigul.mts_service.balance.repository",
         entityManagerFactoryRef = "balanceEntityManagerFactory",
         transactionManagerRef = "transactionManager")
 public class BalanceJpaConfig {
@@ -50,7 +50,7 @@ public class BalanceJpaConfig {
     public LocalContainerEntityManagerFactoryBean balanceEntityManagerFactory(@Qualifier("balanceDataSource") DataSource ds) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(ds);
-        em.setPackagesToScan("ru.aigul.mts_service.oracle.model");
+        em.setPackagesToScan("ru.aigul.mts_service.model");
         em.setPersistenceUnitName("balancePU");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();

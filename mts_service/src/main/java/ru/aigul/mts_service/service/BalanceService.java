@@ -10,7 +10,7 @@ import ru.aigul.mts_service.dto.BalanceResponse;
 import ru.aigul.mts_service.exception.UserNotFoundException;
 import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.model.User;
-import ru.aigul.mts_service.repository.BalanceRepository;
+import ru.aigul.mts_service.balance.repository.BalanceRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

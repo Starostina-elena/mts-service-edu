@@ -5,7 +5,6 @@ import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.exception.*;
@@ -13,8 +12,7 @@ import ru.aigul.mts_service.exception.*;
 import ru.aigul.mts_service.mapper.ApplicationMapper;
 import ru.aigul.mts_service.model.*;
 import ru.aigul.mts_service.repository.*;
-import ru.aigul.mts_service.oracle.repository.OracleBalanceRepository;
-import ru.aigul.mts_service.oracle.model.BalanceOracle;
+import ru.aigul.mts_service.balance.repository.BalanceRepository;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
@@ -34,11 +32,10 @@ public class ApplicationService {
     private final TariffRepository tariffRepository;
     private final TariffCityPriceRepository tariffCityPriceRepository;
     private final UserRepository userRepository;
-    private final OracleBalanceRepository oracleBalanceRepository;
+    private final BalanceRepository balanceRepository;
     private final ServiceRepository serviceRepository;
     private final ApplicationMapper applicationMapper;
     private final UserService userService;
-    private final TransactionTemplate transactionTemplate;
 
     public List<Application> getApplicationsForUserEmail(String email) {
         Optional<User> userOpt = userService.findByEmail(email);
@@ -78,10 +75,10 @@ public class ApplicationService {
             }
         }
 
-        // use Oracle balance as the source of truth
-        BalanceOracle oracleBal = oracleBalanceRepository.findByUserId(userId)
+        // use Postgres balance as the source of truth (balances in Postgres#2)
+        ru.aigul.mts_service.model.Balance pgBal = balanceRepository.findByUserId(userId)
                 .orElseThrow(() -> new InsufficientFundsException());
-        if (oracleBal.getAmount().compareTo(totalPrice) < 0) {
+        if (pgBal.getAmount().compareTo(totalPrice) < 0) {
             throw new InsufficientFundsException();
         }
 
@@ -115,6 +112,7 @@ public class ApplicationService {
         return applicationMapper.toDetailDto(application);
     }
 
+    @Transactional
     public ApplicationDto approve(Long userId, Long applicationId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -122,43 +120,42 @@ public class ApplicationService {
             throw new AccessDeniedException("Only manager can approve applications");
         }
 
-        return transactionTemplate.execute(status -> {
-            Application application = applicationRepository.findByIdForUpdate(applicationId)
-                    .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
+        Application application = applicationRepository.findByIdForUpdate(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
 
-            if (application.getStatus() != ApplicationStatus.PENDING) {
-                throw new InvalidApplicationStatusException("Application already processed");
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new InvalidApplicationStatusException("Application already processed");
+        }
+
+        BigDecimal price = application.getTariff().getBasePrice();
+        if (price == null) price = BigDecimal.ZERO;
+        if (application.getAdditionalServices() != null && !application.getAdditionalServices().isEmpty()) {
+            for (ru.aigul.mts_service.model.Service s : application.getAdditionalServices()) {
+                if (s.getPrice() != null) price = price.add(s.getPrice());
             }
+        }
 
-            BigDecimal price = application.getTariff().getBasePrice();
-            if (price == null) price = BigDecimal.ZERO;
-            if (application.getAdditionalServices() != null && !application.getAdditionalServices().isEmpty()) {
-                for (ru.aigul.mts_service.model.Service s : application.getAdditionalServices()) {
-                    if (s.getPrice() != null) price = price.add(s.getPrice());
-                }
-            }
+        Long targetUserId = application.getUser().getId();
 
-            Long targetUserId = application.getUser().getId();
+        // Decrease balance in Postgres#2 (participating XA resource)
+        ru.aigul.mts_service.model.Balance bal = balanceRepository.findByUserIdForUpdate(targetUserId)
+                .orElseThrow(() -> new InsufficientFundsException());
 
-            // Decrease balance in Oracle (participating XA resource)
-            BalanceOracle oa = oracleBalanceRepository.findByUserIdForUpdate(targetUserId)
-                    .orElseThrow(() -> new InsufficientFundsException());
+        if (bal.getAmount().compareTo(price) < 0) {
+            throw new InsufficientFundsException();
+        }
 
-            if (oa.getAmount().compareTo(price) < 0) {
-                throw new InsufficientFundsException();
-            }
+        bal.setAmount(bal.getAmount().subtract(price));
+        balanceRepository.save(bal);
 
-            oa.setAmount(oa.getAmount().subtract(price));
-            oracleBalanceRepository.save(oa);
+        // Update application status in Postgres#1 (another XA resource)
+        application.setStatus(ApplicationStatus.APPROVED);
+        application = applicationRepository.save(application);
 
-            // Update application status in Postgres (another XA resource)
-            application.setStatus(ApplicationStatus.APPROVED);
-            application = applicationRepository.save(application);
-
-            return applicationMapper.toDto(application);
-        });
+        return applicationMapper.toDto(application);
     }
 
+    @Transactional
     public ApplicationDto reject(Long userId, Long applicationId, ApplicationRejectDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -166,18 +163,16 @@ public class ApplicationService {
             throw new AccessDeniedException("Only manager can reject applications");
         }
 
-        return transactionTemplate.execute(status -> {
-            Application application = applicationRepository.findByIdForUpdate(applicationId)
-                    .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
+        Application application = applicationRepository.findByIdForUpdate(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
 
-            if (application.getStatus() != ApplicationStatus.PENDING) {
-                throw new InvalidApplicationStatusException("Application already processed");
-            }
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            throw new InvalidApplicationStatusException("Application already processed");
+        }
 
-            application.setStatus(ApplicationStatus.REJECTED);
-            application.setRejectReason(dto.getReason());
-            application = applicationRepository.save(application);
-            return applicationMapper.toDto(application);
-        });
+        application.setStatus(ApplicationStatus.REJECTED);
+        application.setRejectReason(dto.getReason());
+        application = applicationRepository.save(application);
+        return applicationMapper.toDto(application);
     }
 }

@@ -2,7 +2,7 @@ package ru.aigul.mts_service.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.aigul.mts_service.repository.BalanceRepository;
+import ru.aigul.mts_service.balance.repository.BalanceRepository;
 import ru.aigul.mts_service.oracle.repository.OracleBalanceRepository;
 import ru.aigul.mts_service.model.Balance;
 import ru.aigul.mts_service.oracle.model.BalanceOracle;
