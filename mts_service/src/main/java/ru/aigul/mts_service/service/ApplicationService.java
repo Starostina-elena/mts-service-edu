@@ -1,7 +1,11 @@
 package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Limit;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aigul.mts_service.dto.CursorPage;
@@ -76,8 +80,6 @@ public class ApplicationService {
             }
         }
 
-        // При создании заявки не требуем проверку баланса — списание происходит при одобрении
-
         Application application = new Application();
         application.setUser(user);
         application.setTariff(tariff);
@@ -107,7 +109,15 @@ public class ApplicationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         if (user.getRole() != Role.MANAGER) {
-            throw new AccessDeniedException("Only manager can approve applications");
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isManager = false;
+            if (auth != null) {
+                for (GrantedAuthority ga : auth.getAuthorities()) {
+                    String a = ga.getAuthority();
+                    if ("ROLE_MANAGER".equals(a) || "MANAGER".equals(a)) { isManager = true; break; }
+                }
+            }
+            if (!isManager) throw new AccessDeniedException("Only manager can approve applications");
         }
 
         Application application = applicationRepository.findById(applicationId)
@@ -146,7 +156,15 @@ public class ApplicationService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         if (user.getRole() != Role.MANAGER) {
-            throw new AccessDeniedException("Only manager can reject applications");
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isManager = false;
+            if (auth != null) {
+                for (GrantedAuthority ga : auth.getAuthorities()) {
+                    String a = ga.getAuthority();
+                    if ("ROLE_MANAGER".equals(a) || "MANAGER".equals(a)) { isManager = true; break; }
+                }
+            }
+            if (!isManager) throw new AccessDeniedException("Only manager can reject applications");
         }
 
         Application application = applicationRepository.findById(applicationId)

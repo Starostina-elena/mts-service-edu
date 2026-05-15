@@ -52,7 +52,23 @@ public class UserService {
         if (username == null) throw new IllegalArgumentException("Authentication principal has no name");
 
         Optional<User> opt = findByEmail(username);
-        if (opt.isPresent()) return opt.get();
+        if (opt.isPresent()) {
+            User existing = opt.get();
+            Role role = Role.USER;
+            Collection<? extends GrantedAuthority> auths = auth.getAuthorities();
+            if (auths != null) {
+                for (GrantedAuthority ga : auths) {
+                    String a = ga.getAuthority();
+                    if ("ROLE_MANAGER".equals(a) || "MANAGER".equals(a)) { role = Role.MANAGER; break; }
+                    if ("ROLE_ADMIN".equals(a) || "ADMIN".equals(a)) { role = Role.ADMIN; break; }
+                }
+            }
+            if (existing.getRole() != role) {
+                existing.setRole(role);
+                return userRepository.save(existing);
+            }
+            return existing;
+        }
 
         if (!username.contains("@")) {
             Optional<User> alt = userRepository.findByEmail(username + "@test.com");

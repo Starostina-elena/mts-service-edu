@@ -11,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import ru.aigul.mts_service.auth.XmlJaasAuthenticationProvider;
 
@@ -35,7 +36,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationProvider authProvider) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationProvider authProvider, MockAuthenticationFilter mockAuthenticationFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -46,6 +47,8 @@ public class SecurityConfig {
                 )
                 .authenticationProvider(authProvider)
                 .httpBasic(httpBasic -> {});
+
+        http.addFilterAfter(mockAuthenticationFilter, BasicAuthenticationFilter.class);
 
         return http.build();
     }

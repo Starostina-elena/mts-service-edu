@@ -16,6 +16,8 @@ import ru.aigul.mts_service.mapper.AccountApplicationMapper;
 import ru.aigul.mts_service.model.Application;
 import ru.aigul.mts_service.service.ApplicationService;
 import ru.aigul.mts_service.service.BalanceService;
+import ru.aigul.mts_service.service.UserService;
+import ru.aigul.mts_service.model.User;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,10 +32,15 @@ public class AccountController {
     private final ApplicationService applicationService;
     private final BalanceService balanceService;
     private final AccountApplicationMapper applicationMapper;
+    private final UserService userService;
 
     @GetMapping("/applications")
     public ResponseEntity<List<ApplicationResponse>> getMyApplications(Authentication auth) {
-        String email = auth != null ? auth.getName() : null;
+        String email = null;
+        if (auth != null) {
+            User u = userService.findOrCreateFromAuthentication(auth);
+            email = u.getEmail();
+        }
         List<Application> apps = applicationService.getApplicationsForUserEmail(email);
         List<ApplicationResponse> dto = apps.stream().map(applicationMapper::toDto).collect(Collectors.toList());
         return ResponseEntity.ok(dto);
