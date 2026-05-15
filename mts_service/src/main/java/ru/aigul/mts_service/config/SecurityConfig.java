@@ -12,7 +12,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-import ru.aigul.mts_service.auth.XmlFileAuthenticationProvider;
+import ru.aigul.mts_service.auth.XmlJaasAuthenticationProvider;
 
 @Configuration
 @EnableMethodSecurity
@@ -31,7 +31,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        return new XmlFileAuthenticationProvider();
+        return new XmlJaasAuthenticationProvider();
     }
 
     @Bean

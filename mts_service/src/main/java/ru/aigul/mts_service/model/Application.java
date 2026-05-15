@@ -3,8 +3,6 @@ package ru.aigul.mts_service.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -38,24 +36,22 @@ public class Application {
     @Column(nullable = false, length = 20)
     private ApplicationStatus status = ApplicationStatus.PENDING;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "reject_reason", columnDefinition = "TEXT")
     private String rejectReason;
 
-    @Column(nullable = false)
+    @Column(name = "passport_verified", nullable = false)
     private Boolean passportVerified = false;
 
-    @Column(nullable = false)
+    @Column(name = "technical_feasibility", nullable = false)
     private Boolean technicalFeasibility = false;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "application_services", joinColumns = @JoinColumn(name = "application_id"), inverseJoinColumns = @JoinColumn(name = "service_id"))
     private Set<Service> additionalServices = new HashSet<>();
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false, insertable = false)
     private LocalDateTime updatedAt;
 }

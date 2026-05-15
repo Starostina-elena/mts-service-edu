@@ -56,10 +56,15 @@ public class XmlJaasAuthenticationProvider implements AuthenticationProvider {
             Set<GrantedAuthority> authorities = new HashSet<>();
             subject.getPrincipals().forEach(p -> {
                 if (p instanceof ru.aigul.mts_service.auth.RolePrincipal) {
-                    authorities.add(new SimpleGrantedAuthority(((ru.aigul.mts_service.auth.RolePrincipal) p).getName()));
+                    String role = ((ru.aigul.mts_service.auth.RolePrincipal) p).getName();
+                    if (role != null && !role.isBlank()) {
+                        authorities.add(new SimpleGrantedAuthority(role.startsWith("ROLE_") ? role : "ROLE_" + role));
+                        authorities.add(new SimpleGrantedAuthority(role));
+                    }
                 }
             });
             if (authorities.isEmpty()) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
                 authorities.add(new SimpleGrantedAuthority("USER"));
             }
             return new UsernamePasswordAuthenticationToken(username, null, authorities);

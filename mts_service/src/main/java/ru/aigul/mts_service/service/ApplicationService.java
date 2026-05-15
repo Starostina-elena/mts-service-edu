@@ -76,11 +76,7 @@ public class ApplicationService {
             }
         }
 
-        Balance balance = balanceRepository.findByUserId(userId)
-                .orElseThrow(() -> new InsufficientFundsException());
-        if (balance.getAmount().compareTo(totalPrice) < 0) {
-            throw new InsufficientFundsException();
-        }
+        // При создании заявки не требуем проверку баланса — списание происходит при одобрении
 
         Application application = new Application();
         application.setUser(user);

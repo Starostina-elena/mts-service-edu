@@ -4,13 +4,13 @@ import org.postgresql.ds.PGSimpleDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -20,7 +20,8 @@ import java.util.Map;
 @Configuration
 @EnableJpaRepositories(
         basePackages = "ru.aigul.mts_service.repository",
-        entityManagerFactoryRef = "primaryEntityManager"
+        entityManagerFactoryRef = "primaryEntityManager",
+        transactionManagerRef = "transactionManager"
 )
 public class PrimaryXaConfig {
 
@@ -69,11 +70,11 @@ public class PrimaryXaConfig {
 
     @Bean
     @Primary
-    public LocalContainerEntityManagerFactoryBean primaryEntityManager(DataSource primaryDataSource) {
+    public LocalContainerEntityManagerFactoryBean primaryEntityManager(@Qualifier("primaryDataSource") DataSource primaryDataSource) {
         LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
         emf.setPackagesToScan("ru.aigul.mts_service.model");
         emf.setPersistenceUnitName("primaryPU");
-        emf.setJtaDataSource(primaryDataSource);
+        emf.setDataSource(primaryDataSource);
         emf.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Map<String,Object> props = new HashMap<>();
         props.put("jakarta.persistence.transactionType", "JTA");
@@ -85,9 +86,7 @@ public class PrimaryXaConfig {
 
     @Bean(name = "transactionManager")
     @Primary
-    public PlatformTransactionManager transactionManager(LocalContainerEntityManagerFactoryBean primaryEntityManager) {
-        JpaTransactionManager tm = new JpaTransactionManager();
-        tm.setEntityManagerFactory(primaryEntityManager.getObject());
-        return tm;
+    public PlatformTransactionManager transactionManager(@Qualifier("jtaTransactionManager") PlatformTransactionManager jta) {
+        return jta;
     }
 }

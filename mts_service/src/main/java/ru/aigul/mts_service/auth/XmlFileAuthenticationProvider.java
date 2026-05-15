@@ -72,10 +72,13 @@ public class XmlFileAuthenticationProvider implements AuthenticationProvider {
         Set<GrantedAuthority> authorities = new HashSet<>();
         List<String> r = roles.getOrDefault(username, roles.getOrDefault(lookup, Collections.singletonList("USER")));
         for (String role : r) {
+            if (role == null || role.isBlank()) continue;
+            String a = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+            authorities.add(new SimpleGrantedAuthority(a));
             authorities.add(new SimpleGrantedAuthority(role));
         }
 
-        return new UsernamePasswordAuthenticationToken(lookup, null, authorities);
+        return new UsernamePasswordAuthenticationToken(username, null, authorities);
     }
 
     @Override
