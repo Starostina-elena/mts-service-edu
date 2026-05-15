@@ -54,7 +54,6 @@ public class XmlLoginModule implements LoginModule {
                 roles.put(username, rlist);
             }
         } catch (Exception e) {
-            // ignore, leave users empty
         }
     }
 

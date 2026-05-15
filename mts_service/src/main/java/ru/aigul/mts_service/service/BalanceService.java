@@ -16,6 +16,9 @@ import ru.aigul.mts_service.model.User;
 import ru.aigul.mts_service.repository.UserRepository;
 
 import javax.sql.DataSource;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -39,6 +42,9 @@ public class BalanceService {
     @Qualifier("balanceDataSource")
     private DataSource balanceDataSource;
 
+    @PersistenceContext(unitName = "balancePU")
+    private EntityManager balanceEntityManager;
+
     @Value("${payments.base-url}")
     private String paymentsBaseUrl;
 
@@ -54,28 +60,10 @@ public class BalanceService {
 
         User user = userOpt.get();
 
-        Optional<Balance> balOpt = balanceRepository.findByUserId(user.getId());
-        if (balOpt.isPresent()) return balOpt;
-
-        try {
-            JdbcTemplate jt = new JdbcTemplate(balanceDataSource);
-            Balance b = jt.queryForObject(
-                    "SELECT id, user_id, amount, updated_at FROM balances WHERE user_id = ?",
-                    new Object[]{user.getId()},
-                    (rs, rowNum) -> {
-                        Balance bb = new Balance();
-                        bb.setId(rs.getLong("id"));
-                        bb.setUserId(rs.getLong("user_id"));
-                        bb.setAmount(rs.getBigDecimal("amount"));
-                        java.sql.Timestamp t = rs.getTimestamp("updated_at");
-                        if (t != null) bb.setUpdatedAt(t.toLocalDateTime());
-                        return bb;
-                    }
-            );
-            return Optional.ofNullable(b);
-        } catch (Exception e) {
-            return Optional.empty();
-        }
+        TypedQuery<Balance> q = balanceEntityManager.createQuery("SELECT b FROM Balance b WHERE b.userId = :uid", Balance.class);
+        q.setParameter("uid", user.getId());
+        Balance b = q.getResultStream().findFirst().orElse(null);
+        return Optional.ofNullable(b);
     }
 
     public Optional<String> createTopUpPayment(String email, BigDecimal amount) {
@@ -141,16 +129,22 @@ public class BalanceService {
         User user = userService.findOrCreateFromAuthentication(auth);
         if (user == null || user.getId() == null) return false;
 
-        // update balance within the same JTA transaction
-        Balance balance = balanceRepository.findByUserId(user.getId()).orElseGet(() -> {
+        TypedQuery<Balance> q = balanceEntityManager.createQuery("SELECT b FROM Balance b WHERE b.userId = :uid", Balance.class);
+        q.setParameter("uid", user.getId());
+        Balance balance = q.getResultStream().findFirst().orElseGet(() -> {
             Balance b = new Balance();
             b.setUserId(user.getId());
             b.setAmount(BigDecimal.ZERO);
             return b;
         });
-        log.debug("Applying top-up (JTA flow): userId={} currentAmount={} add={}", user.getId(), balance.getAmount(), amount);
+        log.debug("Applying top-up (JTA + balancePU): userId={} currentAmount={} add={}", user.getId(), balance.getAmount(), amount);
         balance.setAmount(balance.getAmount().add(amount));
-        balanceRepository.saveAndFlush(balance);
+        if (balance.getId() == null) {
+            balanceEntityManager.persist(balance);
+        } else {
+            balanceEntityManager.merge(balance);
+        }
+        balanceEntityManager.flush();
         return true;
     }
 

@@ -48,7 +48,6 @@ public class XmlAuthenticationProvider implements AuthenticationProvider {
                 }
             }
         } catch (Exception e) {
-            // swallow - no users loaded
             e.printStackTrace();
         }
     }

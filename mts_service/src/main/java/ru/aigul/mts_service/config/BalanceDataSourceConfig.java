@@ -62,10 +62,11 @@ public class BalanceDataSourceConfig {
     }
 
     @Bean
-    public LocalContainerEntityManagerFactoryBean balanceEntityManager(DataSource balanceDataSource) {
+    public LocalContainerEntityManagerFactoryBean balanceEntityManager(@Qualifier("balanceDataSource") DataSource balanceDataSource) {
         LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
         emf.setPackagesToScan("ru.aigul.mts_service.balance.model");
         emf.setPersistenceUnitName("balancePU");
+        emf.setJtaDataSource(balanceDataSource);
         emf.setDataSource(balanceDataSource);
         emf.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Map<String,Object> props = new HashMap<>();

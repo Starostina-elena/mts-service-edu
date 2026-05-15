@@ -1,6 +1,7 @@
 package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.security.core.Authentication;
@@ -31,6 +32,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
@@ -41,6 +43,14 @@ public class ApplicationService {
     private final ServiceRepository serviceRepository;
     private final ApplicationMapper applicationMapper;
     private final UserService userService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.beans.factory.annotation.Qualifier("primaryDataSource")
+    private javax.sql.DataSource primaryDataSource;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.beans.factory.annotation.Qualifier("balanceDataSource")
+    private javax.sql.DataSource balanceDataSource;
 
     public List<Application> getApplicationsForUserEmail(String email) {
         Optional<User> userOpt = userService.findByEmail(email);
@@ -104,7 +114,7 @@ public class ApplicationService {
         return applicationMapper.toDetailDto(application);
     }
 
-    @Transactional
+    @Transactional(transactionManager = "transactionManager")
     public ApplicationDto approve(Long userId, Long applicationId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -140,15 +150,21 @@ public class ApplicationService {
 
         Long applUserId = application.getUser().getId();
         Balance balance = balanceRepository.findByUserId(applUserId)
-                .orElseThrow(() -> new InsufficientFundsException());
+                .orElseThrow(InsufficientFundsException::new);
+        log.debug("approve(): primaryDS={} balanceDS={} before debit balance={} userId={} totalPrice={}",
+                primaryDataSource.getClass().getName(),
+                balanceDataSource.getClass().getName(),
+                balance.getAmount(), applUserId, totalPrice);
         if (balance.getAmount().compareTo(totalPrice) < 0) {
             throw new InsufficientFundsException();
         }
         balance.setAmount(balance.getAmount().subtract(totalPrice));
-        balanceRepository.save(balance);
+        balanceRepository.saveAndFlush(balance);
+        log.debug("approve(): balance saved and flushed: userId={} newAmount={}", applUserId, balance.getAmount());
 
         application.setStatus(ApplicationStatus.APPROVED);
         application = applicationRepository.save(application);
+        log.debug("approve(): application saved: id={} status={}", application.getId(), application.getStatus());
         return applicationMapper.toDto(application);
     }
     @Transactional
