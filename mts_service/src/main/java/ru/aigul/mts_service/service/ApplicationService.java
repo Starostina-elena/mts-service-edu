@@ -15,6 +15,8 @@ import ru.aigul.mts_service.exception.TariffNotFoundException;
 import ru.aigul.mts_service.exception.UserNotFoundException;
 import ru.aigul.mts_service.mapper.ApplicationMapper;
 import ru.aigul.mts_service.model.*;
+import ru.aigul.mts_service.balance.model.Balance;
+import ru.aigul.mts_service.balance.repository.BalanceRepository;
 import ru.aigul.mts_service.repository.*;
 
 import java.math.BigDecimal;
@@ -119,6 +121,26 @@ public class ApplicationService {
         if (application.getStatus() != ApplicationStatus.PENDING) {
             throw new InvalidApplicationStatusException("Application already processed");
         }
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        Tariff tariff = application.getTariff();
+        if (tariff != null && tariff.getBasePrice() != null) {
+            totalPrice = tariff.getBasePrice();
+        }
+        if (application.getAdditionalServices() != null) {
+            for (ru.aigul.mts_service.model.Service s : application.getAdditionalServices()) {
+                if (s != null && s.getPrice() != null) totalPrice = totalPrice.add(s.getPrice());
+            }
+        }
+
+        Long applUserId = application.getUser().getId();
+        Balance balance = balanceRepository.findByUserId(applUserId)
+                .orElseThrow(() -> new InsufficientFundsException());
+        if (balance.getAmount().compareTo(totalPrice) < 0) {
+            throw new InsufficientFundsException();
+        }
+        balance.setAmount(balance.getAmount().subtract(totalPrice));
+        balanceRepository.save(balance);
 
         application.setStatus(ApplicationStatus.APPROVED);
         application = applicationRepository.save(application);

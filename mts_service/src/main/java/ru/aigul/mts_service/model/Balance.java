@@ -1,4 +1,4 @@
-package ru.aigul.mts_service.model;
+package ru.aigul.mts_service.balance.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -18,9 +18,8 @@ public class Balance {
     private Long id;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @NotNull
     @Column(nullable = false, precision = 10, scale = 2)
