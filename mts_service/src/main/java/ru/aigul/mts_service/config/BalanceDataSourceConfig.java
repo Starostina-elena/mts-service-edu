@@ -66,7 +66,6 @@ public class BalanceDataSourceConfig {
         LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
         emf.setPackagesToScan("ru.aigul.mts_service.balance.model");
         emf.setPersistenceUnitName("balancePU");
-        // Используем локальный DataSource для этого EntityManager (совместимо с JpaTransactionManager)
         emf.setDataSource(balanceDataSource);
         emf.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         Map<String,Object> props = new HashMap<>();

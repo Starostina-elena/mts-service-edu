@@ -78,8 +78,6 @@ public class PrimaryXaConfig {
         Map<String,Object> props = new HashMap<>();
         props.put("jakarta.persistence.transactionType", "JTA");
         props.put("hibernate.transaction.jta.platform", "org.hibernate.engine.transaction.jta.platform.internal.NarayanaJtaPlatform");
-        // В локальной Dev среде разрешаем Hibernate обновлять схему (создавать недостающие таблицы).
-        // В проде рекомендуется управлять схемой через миграции и вернуть validate.
         props.put("hibernate.hbm2ddl.auto", "update");
         emf.setJpaPropertyMap(props);
         return emf;

@@ -7,7 +7,37 @@
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
     { "key": "adminUser", "value": "admin@local", "type": "string" },
+    { "key": "authUser", "value": "admin", "type": "string" },
+    { "key": "authPass", "value": "adminpass", "type": "string" },
     { "key": "exampleTariffId", "value": "1", "type": "string" }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{authUser}}", "type": "string" },
+      { "key": "password", "value": "{{authPass}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "(() => {",
+          "  try {",
+          "    const auth = pm.request && pm.request.auth;",
+          "    if (auth && auth.type === 'noauth') return;",
+          "    const user = pm.collectionVariables.get('authUser') || pm.variables.get('authUser') || pm.environment.get('authUser');",
+          "    const pass = pm.collectionVariables.get('authPass') || pm.variables.get('authPass') || pm.environment.get('authPass');",
+          "    if (!user || !pass) return;",
+          "    const val = 'Basic ' + btoa(user + ':' + pass);",
+          "    pm.request.headers.upsert({ key: 'Authorization', value: val });",
+          "  } catch (e) { console.log('auth helper error', e); }",
+          "})();"
+        ]
+      }
+    }
   ],
   "item": [
     {
@@ -17,7 +47,7 @@
         "header": [
           { "key": "Accept", "value": "application/json" },
           { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Mock-User", "value": "{{adminUser}}", "description": "must be admin@local" }
+          { "key": "Content-Length", "value": "", "disabled": true }
         ],
         "body": {
           "mode": "raw",
@@ -34,7 +64,7 @@
         "method": "POST",
         "header": [
           { "key": "Accept", "value": "application/json" },
-          { "key": "X-Mock-User", "value": "{{adminUser}}" }
+          { "key": "Content-Length", "value": "", "disabled": true }
         ],
         "url": {
           "raw": "{{baseUrl}}/admin/tariffs/{{exampleTariffId}}/archive",
@@ -52,7 +82,7 @@
         "header": [
           { "key": "Accept", "value": "application/json" },
           { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Mock-User", "value": "{{adminUser}}" }
+          { "key": "Content-Length", "value": "", "disabled": true }
         ],
         "body": {
           "mode": "raw",
@@ -65,4 +95,3 @@
     }
   ]
 }
-

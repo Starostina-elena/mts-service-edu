@@ -1,0 +1,12 @@
+<users>
+  <user username="user" password="userpass">
+    <role>USER</role>
+  </user>
+  <user username="manager" password="managerpass">
+    <role>MANAGER</role>
+  </user>
+  <user username="admin" password="adminpass">
+    <role>ADMIN</role>
+  </user>
+</users>
+

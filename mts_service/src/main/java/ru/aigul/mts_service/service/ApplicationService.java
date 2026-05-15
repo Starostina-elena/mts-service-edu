@@ -3,7 +3,6 @@ package ru.aigul.mts_service.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
@@ -49,7 +48,7 @@ public class ApplicationService {
         return applicationRepository.findAllByUserOrderByCreatedAtDesc(user);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public ApplicationDto create(Long userId, ApplicationCreateDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -107,7 +106,7 @@ public class ApplicationService {
         return applicationMapper.toDetailDto(application);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional
     public ApplicationDto approve(Long userId, Long applicationId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -146,7 +145,7 @@ public class ApplicationService {
         application = applicationRepository.save(application);
         return applicationMapper.toDto(application);
     }
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional
     public ApplicationDto reject(Long userId, Long applicationId, ApplicationRejectDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
