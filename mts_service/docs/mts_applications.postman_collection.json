@@ -12,6 +12,16 @@
 			"type": "string"
 		},
 		{
+			"key": "authUser",
+			"value": "manager",
+			"type": "string"
+		},
+		{
+			"key": "authPass",
+			"value": "managerpass",
+			"type": "string"
+		},
+		{
 			"key": "userId",
 			"value": "1",
 			"type": "string"
@@ -32,6 +42,21 @@
 			"type": "string"
 		}
 	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "username",
+				"value": "{{authUser}}",
+				"type": "string"
+			},
+			{
+				"key": "password",
+				"value": "{{authPass}}",
+				"type": "string"
+			}
+		]
+	},
 	"item": [
 		{
 			"name": "Подать заявку на подключение",
@@ -141,12 +166,8 @@
 					{
 						"key": "X-Mock-User",
 						"value": "manager@local",
-						"description": "Роль MANAGER"
-					},
-					{
-						"key": "X-User-Id",
-						"value": "{{userId}}",
-						"description": "ID менеджера/админа"
+						"description": "(deprecated) mock header",
+						"disabled": true
 					}
 				],
 				"url": {
@@ -170,7 +191,8 @@
 					{
 						"key": "X-Mock-User",
 						"value": "manager@local",
-						"description": "Роль MANAGER"
+						"description": "(deprecated) mock header",
+						"disabled": true
 					},
 					{
 						"key": "X-User-Id",

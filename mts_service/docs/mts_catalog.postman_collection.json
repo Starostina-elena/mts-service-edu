@@ -7,8 +7,33 @@
     {
       "key": "baseUrl",
       "value": "http://localhost:8080"
+    },
+    {
+      "key": "authUser",
+      "value": "user",
+      "type": "string"
+    },
+    {
+      "key": "authPass",
+      "value": "userpass",
+      "type": "string"
     }
   ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "username",
+        "value": "{{authUser}}",
+        "type": "string"
+      },
+      {
+        "key": "password",
+        "value": "{{authPass}}",
+        "type": "string"
+      }
+    ]
+  },
   "item": [
     {
       "name": "Справочники",
@@ -19,8 +44,13 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/cities",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "cities"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "cities"
+              ]
             }
           }
         },
@@ -30,8 +60,13 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/services",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "services"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "services"
+              ]
             }
           }
         }
@@ -46,13 +81,32 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/home?cityId=1&limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "home"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "home"
+              ],
               "query": [
-                { "key": "cityId", "value": "1" },
-                { "key": "priceMax", "value": "1000", "disabled": true },
-                { "key": "after", "value": "5", "disabled": true },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "cityId",
+                  "value": "1"
+                },
+                {
+                  "key": "priceMax",
+                  "value": "1000",
+                  "disabled": true
+                },
+                {
+                  "key": "after",
+                  "value": "5",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -63,15 +117,43 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/mobile?limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "mobile"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "mobile"
+              ],
               "query": [
-                { "key": "internetGb", "value": "10", "disabled": true },
-                { "key": "callsMinutes", "value": "300", "disabled": true },
-                { "key": "forFamily", "value": "true", "disabled": true },
-                { "key": "noSubscriptionFee", "value": "true", "disabled": true },
-                { "key": "after", "value": "5", "disabled": true },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "internetGb",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "callsMinutes",
+                  "value": "300",
+                  "disabled": true
+                },
+                {
+                  "key": "forFamily",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "noSubscriptionFee",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "after",
+                  "value": "5",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -82,11 +164,23 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/devices?limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "devices"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "devices"
+              ],
               "query": [
-                { "key": "after", "value": "5", "disabled": true },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "after",
+                  "value": "5",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -97,12 +191,27 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/landline?cityId=1&limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "landline"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "landline"
+              ],
               "query": [
-                { "key": "cityId", "value": "1" },
-                { "key": "after", "value": "5", "disabled": true },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "cityId",
+                  "value": "1"
+                },
+                {
+                  "key": "after",
+                  "value": "5",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -113,12 +222,27 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/satellite-tv?cityId=1&limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "satellite-tv"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "satellite-tv"
+              ],
               "query": [
-                { "key": "cityId", "value": "1" },
-                { "key": "after", "value": "5", "disabled": true },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "cityId",
+                  "value": "1"
+                },
+                {
+                  "key": "after",
+                  "value": "5",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -129,11 +253,23 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/business?limit=20",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "business"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "business"
+              ],
               "query": [
-                { "key": "after", "value": "5", "disabled": true },
-                { "key": "limit", "value": "20" }
+                {
+                  "key": "after",
+                  "value": "5",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
               ]
             }
           }
@@ -149,8 +285,14 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/catalog/tariffs/1",
-              "host": ["{{baseUrl}}"],
-              "path": ["catalog", "tariffs", "1"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "catalog",
+                "tariffs",
+                "1"
+              ]
             }
           }
         }

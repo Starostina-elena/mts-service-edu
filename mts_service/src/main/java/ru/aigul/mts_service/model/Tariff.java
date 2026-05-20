@@ -29,7 +29,7 @@ public class Tariff {
     @Column(nullable = false, length = 20)
     private TariffCategory category;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "base_price", precision = 10, scale = 2)
     private BigDecimal basePrice;
 
     @NotNull
@@ -95,10 +95,10 @@ public class Tariff {
     private String slaDescription;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 }

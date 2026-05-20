@@ -14,6 +14,44 @@
       "key": "mockUser",
       "value": "mock@local",
       "type": "string"
+    },
+    {
+      "key": "authUser",
+      "value": "user",
+      "type": "string"
+    },
+    {
+      "key": "authPass",
+      "value": "userpass",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{authUser}}", "type": "string" },
+      { "key": "password", "value": "{{authPass}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "(() => {",
+          "  try {",
+          "    const auth = pm.request && pm.request.auth;",
+          "    if (auth && auth.type === 'noauth') return;",
+          "    const user = pm.collectionVariables.get('authUser') || pm.variables.get('authUser') || pm.environment.get('authUser');",
+          "    const pass = pm.collectionVariables.get('authPass') || pm.variables.get('authPass') || pm.environment.get('authPass');",
+          "    if (!user || !pass) return;",
+          "    const val = 'Basic ' + btoa(user + ':' + pass);",
+          "    pm.request.headers.upsert({ key: 'Authorization', value: val });",
+          "  } catch (e) { console.log('auth helper error', e); }",
+          "})();"
+        ]
+      }
     }
   ],
   "item": [
@@ -23,7 +61,7 @@
         "method": "GET",
         "header": [
           { "key": "Accept", "value": "application/json" },
-          { "key": "X-Mock-User", "value": "{{mockUser}}", "description": "mock user header (mock@local / manager@local / admin@local)" }
+          { "key": "X-Mock-User", "value": "{{mockUser}}", "description": "mock user header (mock@local / manager@local / admin@local)", "disabled": true }
         ],
         "url": {
           "raw": "{{baseUrl}}/account/applications",
@@ -39,7 +77,7 @@
         "method": "GET",
         "header": [
           { "key": "Accept", "value": "application/json" },
-          { "key": "X-Mock-User", "value": "{{mockUser}}" }
+          { "key": "X-Mock-User", "value": "{{mockUser}}", "disabled": true }
         ],
         "url": {
           "raw": "{{baseUrl}}/account/balance",
@@ -52,7 +90,7 @@
           "name": "200 OK – список заявок пользователя",
           "originalRequest": {
             "method": "GET",
-            "header": [{ "key": "X-Mock-User", "value": "{{mockUser}}" }],
+            "header": [{ "key": "X-Mock-User", "value": "{{mockUser}}", "disabled": true }],
             "url": { "raw": "{{baseUrl}}/account/applications", "host": ["{{baseUrl}}"], "path": ["account","applications"] }
           },
           "status": "OK",
@@ -70,7 +108,7 @@
         "header": [
           { "key": "Accept", "value": "application/json" },
           { "key": "Content-Type", "value": "application/json" },
-          { "key": "X-Mock-User", "value": "{{mockUser}}" }
+          { "key": "X-Mock-User", "value": "{{mockUser}}", "disabled": true }
         ],
         "body": {
           "mode": "raw",
@@ -88,10 +126,7 @@
           "name": "200 OK – payment URL создан",
           "originalRequest": {
             "method": "POST",
-            "header": [
-              { "key": "X-Mock-User", "value": "{{mockUser}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
+            "header": [ { "key": "X-Mock-User", "value": "{{mockUser}}", "disabled": true }, { "key": "Content-Type", "value": "application/json" } ],
             "body": { "mode": "raw", "raw": "{\n  \"amount\": 500.00\n}" },
             "url": { "raw": "{{baseUrl}}/account/balance/top-up", "host": ["{{baseUrl}}"], "path": ["account","balance","top-up"] }
           },
@@ -296,7 +331,7 @@
             "method": "GET",
             "header": [
               { "key": "Accept", "value": "application/json" },
-              { "key": "X-Mock-User", "value": "manager@local", "description": "Используйте manager@local для доступа ко всем заявкам" }
+              { "key": "X-Mock-User", "value": "manager@local", "description": "Используйте manager@local для доступа ко всем заявкам", "disabled": true }
             ],
             "url": {
               "raw": "{{baseUrl}}/applications?limit=5",
@@ -315,7 +350,7 @@
               "name": "200 OK – CursorPage<ApplicationDto>",
               "originalRequest": {
                 "method": "GET",
-                "header": [{ "key": "X-Mock-User", "value": "manager@local" }],
+                "header": [{ "key": "X-Mock-User", "value": "manager@local", "disabled": true }],
                 "url": { "raw": "{{baseUrl}}/applications?limit=5", "host": ["{{baseUrl}}"], "path": ["applications"], "query": [{ "key": "limit", "value": "5" }] }
               },
               "status": "OK",
@@ -354,7 +389,7 @@
             "header": [
               { "key": "Accept", "value": "application/json" },
               { "key": "Content-Type", "value": "application/json" },
-              { "key": "X-Mock-User", "value": "{{mockUser}}" },
+              { "key": "X-Mock-User", "value": "{{mockUser}}", "disabled": true },
               { "key": "X-User-Id", "value": "1", "description": "ID пользователя из БД" }
             ],
             "body": {
@@ -373,7 +408,7 @@
               "name": "201 Created",
               "originalRequest": {
                 "method": "POST",
-                "header": [{ "key": "X-Mock-User", "value": "mock@local" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [{ "key": "X-Mock-User", "value": "mock@local", "disabled": true }, { "key": "Content-Type", "value": "application/json" }],
                 "body": { "mode": "raw", "raw": "{\n  \"tariffId\": 1,\n  \"address\": \"ул. Тестовая, 1\",\n  \"cityId\": 1,\n  \"additionalServiceIds\": []\n}" },
                 "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] }
               },
@@ -387,7 +422,7 @@
               "name": "402 Insufficient Funds",
               "originalRequest": {
                 "method": "POST",
-                "header": [{ "key": "X-Mock-User", "value": "mock@local" }, { "key": "Content-Type", "value": "application/json" }],
+                "header": [{ "key": "X-Mock-User", "value": "mock@local", "disabled": true }, { "key": "Content-Type", "value": "application/json" }],
                 "body": { "mode": "raw", "raw": "{\n  \"tariffId\": 1,\n  \"address\": \"ул. Тестовая, 1\",\n  \"cityId\": 1,\n  \"additionalServiceIds\": []\n}" },
                 "url": { "raw": "{{baseUrl}}/applications", "host": ["{{baseUrl}}"], "path": ["applications"] }
               },
@@ -443,4 +478,3 @@
     }
   ]
 }
-

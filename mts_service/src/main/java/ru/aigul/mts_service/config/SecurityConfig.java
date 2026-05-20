@@ -4,13 +4,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import ru.aigul.mts_service.auth.XmlJaasAuthenticationProvider;
 
 @Configuration
 @EnableMethodSecurity
@@ -28,7 +31,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, MockAuthenticationFilter mockFilter) throws Exception {
+    public AuthenticationProvider authenticationProvider() {
+        return new XmlJaasAuthenticationProvider();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationProvider authProvider, MockAuthenticationFilter mockAuthenticationFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -37,7 +45,10 @@ public class SecurityConfig {
                         .requestMatchers(publicEndpoints).permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(mockFilter, UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authProvider)
+                .httpBasic(httpBasic -> {});
+
+        http.addFilterAfter(mockAuthenticationFilter, BasicAuthenticationFilter.class);
 
         return http.build();
     }

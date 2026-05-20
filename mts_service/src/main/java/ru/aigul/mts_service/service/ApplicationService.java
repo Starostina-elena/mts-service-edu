@@ -1,9 +1,13 @@
 package ru.aigul.mts_service.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Limit;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
@@ -15,6 +19,8 @@ import ru.aigul.mts_service.exception.TariffNotFoundException;
 import ru.aigul.mts_service.exception.UserNotFoundException;
 import ru.aigul.mts_service.mapper.ApplicationMapper;
 import ru.aigul.mts_service.model.*;
+import ru.aigul.mts_service.balance.model.Balance;
+import ru.aigul.mts_service.balance.repository.BalanceRepository;
 import ru.aigul.mts_service.repository.*;
 
 import java.math.BigDecimal;
@@ -26,6 +32,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
@@ -37,6 +44,14 @@ public class ApplicationService {
     private final ApplicationMapper applicationMapper;
     private final UserService userService;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.beans.factory.annotation.Qualifier("primaryDataSource")
+    private javax.sql.DataSource primaryDataSource;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    @org.springframework.beans.factory.annotation.Qualifier("balanceDataSource")
+    private javax.sql.DataSource balanceDataSource;
+
     public List<Application> getApplicationsForUserEmail(String email) {
         Optional<User> userOpt = userService.findByEmail(email);
         if (userOpt.isEmpty()) {
@@ -47,7 +62,7 @@ public class ApplicationService {
         return applicationRepository.findAllByUserOrderByCreatedAtDesc(user);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public ApplicationDto create(Long userId, ApplicationCreateDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
@@ -75,12 +90,6 @@ public class ApplicationService {
             }
         }
 
-        Balance balance = balanceRepository.findByUserId(userId)
-                .orElseThrow(() -> new InsufficientFundsException());
-        if (balance.getAmount().compareTo(totalPrice) < 0) {
-            throw new InsufficientFundsException();
-        }
-
         Application application = new Application();
         application.setUser(user);
         application.setTariff(tariff);
@@ -105,12 +114,20 @@ public class ApplicationService {
         return applicationMapper.toDetailDto(application);
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(transactionManager = "transactionManager")
     public ApplicationDto approve(Long userId, Long applicationId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         if (user.getRole() != Role.MANAGER) {
-            throw new AccessDeniedException("Only manager can approve applications");
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isManager = false;
+            if (auth != null) {
+                for (GrantedAuthority ga : auth.getAuthorities()) {
+                    String a = ga.getAuthority();
+                    if ("ROLE_MANAGER".equals(a) || "MANAGER".equals(a)) { isManager = true; break; }
+                }
+            }
+            if (!isManager) throw new AccessDeniedException("Only manager can approve applications");
         }
 
         Application application = applicationRepository.findById(applicationId)
@@ -120,16 +137,50 @@ public class ApplicationService {
             throw new InvalidApplicationStatusException("Application already processed");
         }
 
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        Tariff tariff = application.getTariff();
+        if (tariff != null && tariff.getBasePrice() != null) {
+            totalPrice = tariff.getBasePrice();
+        }
+        if (application.getAdditionalServices() != null) {
+            for (ru.aigul.mts_service.model.Service s : application.getAdditionalServices()) {
+                if (s != null && s.getPrice() != null) totalPrice = totalPrice.add(s.getPrice());
+            }
+        }
+
+        Long applUserId = application.getUser().getId();
+        Balance balance = balanceRepository.findByUserId(applUserId)
+                .orElseThrow(InsufficientFundsException::new);
+        log.debug("approve(): primaryDS={} balanceDS={} before debit balance={} userId={} totalPrice={}",
+                primaryDataSource.getClass().getName(),
+                balanceDataSource.getClass().getName(),
+                balance.getAmount(), applUserId, totalPrice);
+        if (balance.getAmount().compareTo(totalPrice) < 0) {
+            throw new InsufficientFundsException();
+        }
+        balance.setAmount(balance.getAmount().subtract(totalPrice));
+        balanceRepository.saveAndFlush(balance);
+        log.debug("approve(): balance saved and flushed: userId={} newAmount={}", applUserId, balance.getAmount());
+
         application.setStatus(ApplicationStatus.APPROVED);
         application = applicationRepository.save(application);
+        log.debug("approve(): application saved: id={} status={}", application.getId(), application.getStatus());
         return applicationMapper.toDto(application);
     }
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional
     public ApplicationDto reject(Long userId, Long applicationId, ApplicationRejectDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         if (user.getRole() != Role.MANAGER) {
-            throw new AccessDeniedException("Only manager can reject applications");
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isManager = false;
+            if (auth != null) {
+                for (GrantedAuthority ga : auth.getAuthorities()) {
+                    String a = ga.getAuthority();
+                    if ("ROLE_MANAGER".equals(a) || "MANAGER".equals(a)) { isManager = true; break; }
+                }
+            }
+            if (!isManager) throw new AccessDeniedException("Only manager can reject applications");
         }
 
         Application application = applicationRepository.findById(applicationId)

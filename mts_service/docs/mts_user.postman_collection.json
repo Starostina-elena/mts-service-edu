@@ -6,12 +6,43 @@
   },
   "variable": [
     { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
-    { "key": "mockUser", "value": "mock@local", "type": "string" }
+    { "key": "mockUser", "value": "mock@local", "type": "string" },
+    { "key": "authUser", "value": "user", "type": "string" },
+    { "key": "authPass", "value": "userpass", "type": "string" }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      { "key": "username", "value": "{{authUser}}", "type": "string" },
+      { "key": "password", "value": "{{authPass}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "(() => {",
+          "  try {",
+          "    const auth = pm.request && pm.request.auth;",
+          "    if (auth && auth.type === 'noauth') return;",
+          "    const user = pm.collectionVariables.get('authUser') || pm.variables.get('authUser') || pm.environment.get('authUser');",
+          "    const pass = pm.collectionVariables.get('authPass') || pm.variables.get('authPass') || pm.environment.get('authPass');",
+          "    if (!user || !pass) return;",
+          "    const val = 'Basic ' + btoa(user + ':' + pass);",
+          "    pm.request.headers.upsert({ key: 'Authorization', value: val });",
+          "  } catch (e) { console.log('auth helper error', e); }",
+          "})();"
+        ]
+      }
+    }
   ],
   "item": [
     {
       "name": "Create User",
       "request": {
+        "auth": { "type": "noauth" },
         "method": "POST",
         "header": [
           { "key": "Accept", "value": "application/json" },
@@ -59,4 +90,3 @@
     }
   ]
 }
-

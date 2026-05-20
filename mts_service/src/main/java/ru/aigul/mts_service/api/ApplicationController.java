@@ -5,11 +5,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.model.ApplicationStatus;
 import ru.aigul.mts_service.service.ApplicationService;
+import ru.aigul.mts_service.service.UserService;
+import ru.aigul.mts_service.exception.UserNotFoundException;
+import ru.aigul.mts_service.model.User;
 
 @RestController
 @RequestMapping("/applications")
@@ -17,6 +22,7 @@ import ru.aigul.mts_service.service.ApplicationService;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
+    private final UserService userService;
 
     @Value("${app.pagination.default-limit}")
     private int defaultLimit;
@@ -26,9 +32,12 @@ public class ApplicationController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApplicationDto create(@RequestHeader("${app.auth.user-id-header}") Long userId,
+    public ApplicationDto create(@RequestHeader(value = "${app.auth.user-id-header}", required = false) Long userId,
+                                 @RequestHeader(value = "X-Auth-Email", required = false) String authEmail,
+                                 @RequestHeader(value = "X-Mock-User", required = false) String mockUser,
                                  @Valid @RequestBody ApplicationCreateDto dto) {
-        return applicationService.create(userId, dto);
+        Long effectiveUserId = resolveUserId(userId, authEmail, mockUser);
+        return applicationService.create(effectiveUserId, dto);
     }
 
     @GetMapping
@@ -46,15 +55,39 @@ public class ApplicationController {
     }
 
     @PostMapping("/{applicationId}/approve")
-    public ResponseEntity<ApplicationDto> approve(@RequestHeader("${app.auth.user-id-header}") Long userId,
+    public ResponseEntity<ApplicationDto> approve(@RequestHeader(value = "${app.auth.user-id-header}", required = false) Long userId,
+                                                   @RequestHeader(value = "X-Auth-Email", required = false) String authEmail,
+                                                   @RequestHeader(value = "X-Mock-User", required = false) String mockUser,
                                                    @PathVariable Long applicationId) {
-        return ResponseEntity.ok(applicationService.approve(userId, applicationId));
+        Long effectiveUserId = resolveUserId(userId, authEmail, mockUser);
+        return ResponseEntity.ok(applicationService.approve(effectiveUserId, applicationId));
     }
 
     @PostMapping("/{applicationId}/reject")
-    public ResponseEntity<ApplicationDto> reject(@RequestHeader("${app.auth.user-id-header}") Long userId,
+    public ResponseEntity<ApplicationDto> reject(@RequestHeader(value = "${app.auth.user-id-header}", required = false) Long userId,
+                                                  @RequestHeader(value = "X-Auth-Email", required = false) String authEmail,
+                                                  @RequestHeader(value = "X-Mock-User", required = false) String mockUser,
                                                   @PathVariable Long applicationId,
                                                   @Valid @RequestBody ApplicationRejectDto dto) {
-        return ResponseEntity.ok(applicationService.reject(userId, applicationId, dto));
+        Long effectiveUserId = resolveUserId(userId, authEmail, mockUser);
+        return ResponseEntity.ok(applicationService.reject(effectiveUserId, applicationId, dto));
+    }
+
+    private Long resolveUserId(Long headerUserId, String authEmail, String mockUser) {
+        if (headerUserId != null) return headerUserId;
+        String identifier = authEmail != null && !authEmail.isBlank() ? authEmail : mockUser;
+        if (identifier != null && !identifier.isBlank()) {
+            return userService.findByEmail(identifier)
+                    .orElseThrow(() -> new UserNotFoundException(identifier))
+                    .getId();
+        }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            User u = userService.findOrCreateFromAuthentication(auth);
+            return u.getId();
+        }
+
+        throw new UserNotFoundException("Unknown user");
     }
 }

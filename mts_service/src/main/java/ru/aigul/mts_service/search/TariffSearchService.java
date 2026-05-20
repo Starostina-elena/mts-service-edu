@@ -23,14 +23,12 @@ import ru.aigul.mts_service.repository.TariffRepository;
 @RequiredArgsConstructor
 public class TariffSearchService {
 
-  private static final Logger log =
-      LoggerFactory.getLogger(TariffSearchService.class);
+  private static final Logger log = LoggerFactory.getLogger(TariffSearchService.class);
 
   private final ElasticsearchOperations es;
   private final TariffRepository tariffRepository;
 
-  private static final String STATUS_ACTIVE_FILTER =
-      "{\"term\":{\"status.keyword\":\"ACTIVE\"}}";
+  private static final String STATUS_ACTIVE_FILTER = "{\"term\":{\"status.keyword\":\"ACTIVE\"}}";
 
   public void index(Tariff tariff) {
     TariffDocument d = toDocument(tariff);
@@ -41,16 +39,13 @@ public class TariffSearchService {
     es.delete(String.valueOf(id), TariffDocument.class);
   }
 
-  public SearchResult<TariffDocument> search(String qStr, String categoryStr,
-                                             Double priceMax, Long after,
-                                             int limit) {
+  public SearchResult<TariffDocument> search(String qStr, String categoryStr, Double priceMax, Long after, int limit) {
     String boolQueryJson = buildBoolQueryJson(qStr, categoryStr, priceMax);
 
-    NativeQueryBuilder queryBuilder =
-        new NativeQueryBuilder()
-            .withQuery(new StringQuery(boolQueryJson))
-            .withPageable(PageRequest.of(0, limit + 1))
-            .withSort(Sort.by(Sort.Direction.ASC, "id"));
+    NativeQueryBuilder queryBuilder = new NativeQueryBuilder()
+        .withQuery(new StringQuery(boolQueryJson))
+        .withPageable(PageRequest.of(0, limit + 1))
+        .withSort(Sort.by(Sort.Direction.ASC, "id"));
 
     if (after != null) {
       queryBuilder.withSearchAfter(List.of(after));
@@ -61,49 +56,48 @@ public class TariffSearchService {
     List<TariffDocument> items;
     try {
       SearchHits<TariffDocument> hits = es.search(q, TariffDocument.class);
-      items = hits.getSearchHits()
-                  .stream()
-                  .map(SearchHit::getContent)
-                  .collect(Collectors.toList());
-      log.info(
-          "Elasticsearch returned {} hits for q='{}' category='{}' after='{}'",
-          items.size(), qStr, categoryStr, after);
+      items = hits.getSearchHits().stream().map(SearchHit::getContent).collect(Collectors.toList());
+      log.info("Elasticsearch returned {} hits for q='{}' category='{}' after='{}'", items.size(), qStr, categoryStr, after);
     } catch (Exception ex) {
       log.warn("Elasticsearch search failed: {}", ex.toString());
       items = List.of();
     }
 
-    return new SearchResult<>(
-        CursorPage.of(items, limit, t -> t, TariffDocument::getId), "es");
+    return new SearchResult<>(CursorPage.of(items, limit, t -> t, TariffDocument::getId), "es");
   }
 
-  private String buildBoolQueryJson(String qStr, String categoryStr,
-                                    Double priceMax) {
+  private String buildBoolQueryJson(String qStr, String categoryStr, Double priceMax) {
     StringBuilder filter = new StringBuilder();
     filter.append(STATUS_ACTIVE_FILTER);
 
     if (categoryStr != null && !categoryStr.isBlank()) {
-      filter.append(",")
-          .append("{\"term\":{\"category.keyword\":\"")
+      filter.append(',')
+          .append('{').append("\"term\":{\"category.keyword\":\"")
           .append(escapeJson(categoryStr.toUpperCase()))
-          .append("\"}}");
+          .append("\"}")
+          .append('}');
     }
 
     if (priceMax != null) {
-      filter.append(",")
-          .append("{\"range\":{\"basePrice\":{\"lte\":")
+      filter.append(',')
+          .append('{').append("\"range\":{\"basePrice\":{\"lte\":")
           .append(priceMax)
           .append("}}}");
     }
 
     StringBuilder must = new StringBuilder();
     if (qStr != null && !qStr.isBlank()) {
-      must.append("{\"query_string\":{\"query\":\"*")
-          .append(escapeJson(qStr.toLowerCase()))
-          .append("*\",\"fields\":[\"name\",\"description\"]}}");
+      must.append('{')
+          .append("\"query_string\":{\"query\":\"*")
+          .append(escapeJson(qStr))
+          .append("*\",\"fields\":[\"name\",\"description\"]}")
+          .append('}');
     }
 
-    return "{\"bool\":{\"filter\":[" + filter + "],\"must\":[" + must + "]}}";
+    String filterPart = filter.length() > 0 ? "[" + filter.toString() + "]" : "[]";
+    String mustPart = must.length() > 0 ? "[" + must.toString() + "]" : "[]";
+
+    return "{\"bool\":{\"filter\":" + filterPart + ",\"must\":" + mustPart + "}}";
   }
 
   private String escapeJson(String value) {
@@ -112,20 +106,17 @@ public class TariffSearchService {
 
   public int reindexAll() {
     List<Tariff> all = tariffRepository.findAll();
-    List<TariffDocument> docs =
-        all.stream().map(this::toDocument).collect(Collectors.toList());
+    List<TariffDocument> docs = all.stream().map(this::toDocument).collect(Collectors.toList());
     int success = 0;
     for (TariffDocument d : docs) {
       try {
         es.save(d);
         success++;
       } catch (Exception ex) {
-        System.out.println("Failed to index tariff id=" + d.getId() + ": " +
-                           ex.getMessage());
+        System.out.println("Failed to index tariff id=" + d.getId() + ": " + ex.getMessage());
       }
     }
-    System.out.println("Reindexed " + success + " / " + docs.size() +
-                       " tariffs into Elasticsearch");
+    System.out.println("Reindexed " + success + " / " + docs.size() + " tariffs into Elasticsearch");
     return success;
   }
 
@@ -135,8 +126,7 @@ public class TariffSearchService {
     d.setName(t.getName());
     d.setDescription(t.getDescription());
     d.setCategory(t.getCategory() != null ? t.getCategory().name() : null);
-    d.setBasePrice(t.getBasePrice() != null ? t.getBasePrice().doubleValue()
-                                            : null);
+    d.setBasePrice(t.getBasePrice() != null ? t.getBasePrice().doubleValue() : null);
 
     d.setSpeedMbps(t.getSpeedMbps());
     d.setTvChannels(t.getTvChannels());
@@ -144,8 +134,7 @@ public class TariffSearchService {
     d.setCallsMinutes(t.getCallsMinutes());
     d.setSmsCount(t.getSmsCount());
     d.setForFamily(t.isForFamily());
-    d.setDeviceType(t.getDeviceType() != null ? t.getDeviceType().name()
-                                              : null);
+    d.setDeviceType(t.getDeviceType() != null ? t.getDeviceType().name() : null);
     d.setLocalMinutes(t.getLocalMinutes());
     d.setIntercityMinutes(t.getIntercityMinutes());
     d.setMobileMinutes(t.getMobileMinutes());
@@ -168,8 +157,7 @@ public class TariffSearchService {
 
     d.setStatus(t.getStatus() != null ? t.getStatus().name() : null);
     if (t.getCreatedAt() != null) {
-      d.setCreatedAt(
-          t.getCreatedAt().atOffset(java.time.ZoneOffset.UTC).toString());
+      d.setCreatedAt(t.getCreatedAt().atOffset(java.time.ZoneOffset.UTC).toString());
     }
     return d;
   }
