@@ -110,7 +110,6 @@ public class ApplicationService {
 
         application = applicationRepository.save(application);
 
-        // Publish application.created event to Kafka for asynchronous processing (Taiga, notifications, analytics)
         try {
             ApplicationCreatedEvent evt = new ApplicationCreatedEvent(
                     application.getId(),
@@ -126,7 +125,6 @@ public class ApplicationService {
             log.error("Failed to publish application.created event", e);
         }
 
-        // Optional synchronous fallback: create Taiga issue immediately (useful during migration/debug)
         if (syncTaigaEnabled) {
             try (TaigaConnection connection = taigaConnectionFactory.getConnection()) {
                 connection.createIssue("New Application: " + application.getId(), "Tariff: " + (application.getTariff() != null ? application.getTariff().getName() : "n/a"));

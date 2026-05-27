@@ -61,7 +61,6 @@ public class BalanceDataSourceConfig {
                 }
             }
         } catch (Exception e) {
-            // Log exception so it's visible during startup instead of silently ignored
             LOGGER.log(Level.WARNING, "Failed to parse SPRING_DATASOURCE_BALANCE_URL='" + balanceUrl + "'", e);
         }
         ds.setUser(balanceUser);
@@ -81,13 +80,9 @@ public class BalanceDataSourceConfig {
         props.put("jakarta.persistence.transactionType", "JTA");
         props.put("hibernate.transaction.jta.platform", "org.hibernate.engine.transaction.jta.platform.internal.NarayanaJtaPlatform");
         props.put("hibernate.hbm2ddl.auto", "update");
-        // Explicitly provide JDBC URL and dialect so Hibernate doesn't try to determine dialect from JDBC metadata
         props.put("jakarta.persistence.jdbc.url", balanceUrl);
         props.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-        // Prevent Hibernate from opening a temporary JDBC connection (Driver.connect) to read metadata
-        // which may happen without credentials and cause "The server requested SCRAM-based authentication, but no password was provided."
         props.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
-        // Also provide user/password and driver to be safe
         props.put("jakarta.persistence.jdbc.user", balanceUser);
         props.put("jakarta.persistence.jdbc.password", balancePassword);
         props.put("jakarta.persistence.jdbc.driver", "org.postgresql.Driver");

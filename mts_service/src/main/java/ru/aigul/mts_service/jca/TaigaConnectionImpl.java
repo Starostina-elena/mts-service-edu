@@ -23,7 +23,6 @@ public class TaigaConnectionImpl implements TaigaConnection {
     private static final RestTemplate restTemplate = new RestTemplate();
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    // If Taiga returns authentication cookies (JWT + refresh), we store them here and send as Cookie header
     private static volatile String lastAuthCookie = null;
 
     public TaigaConnectionImpl() {
@@ -45,19 +44,16 @@ public class TaigaConnectionImpl implements TaigaConnection {
             payload.put("severity", 3);
             payload.put("status", 1);
 
-            // project can be configured via env TAIGA_PROJECT (id or slug/name)
             String projectEnv = System.getenv("TAIGA_PROJECT");
             Integer projectId = null;
             if (projectEnv != null && !projectEnv.isBlank()) {
                 try {
                     projectId = Integer.parseInt(projectEnv);
                 } catch (NumberFormatException nfe) {
-                    // not an integer, try to resolve by slug/name
                     projectId = findProjectId(projectEnv);
                 }
             }
             if (projectId == null) {
-                // fallback to default project id 1
                 projectId = 1;
             }
             payload.put("project", projectId);
@@ -110,7 +106,6 @@ public class TaigaConnectionImpl implements TaigaConnection {
 
     private String getTaigaToken() {
         try {
-            // If TAIGA_TOKEN is provided (recommended in environments), use it directly
             String envToken = System.getenv("TAIGA_TOKEN");
             if (envToken != null && !envToken.isBlank()) {
                 log.info("Using TAIGA_TOKEN from environment (redacted)");
@@ -122,7 +117,6 @@ public class TaigaConnectionImpl implements TaigaConnection {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // Try multiple auth payload shapes to be compatible with different Taiga versions
             Map<String, Object> payload1 = new HashMap<>();
             payload1.put("username", user);
             payload1.put("password", pass);
@@ -146,21 +140,17 @@ public class TaigaConnectionImpl implements TaigaConnection {
                     ResponseEntity<Map> response = restTemplate.postForEntity(TAIGA_BASE_URL + "/auth", request, Map.class);
                     Map body = response.getBody();
                     log.debug("Auth response (JSON attempt): {} headers={}", body, response.getHeaders());
-                    // If server returns body token
                     if (body != null && (body.containsKey("auth_token") || body.containsKey("token"))) {
                         Object t = body.containsKey("auth_token") ? body.get("auth_token") : body.get("token");
                         return String.valueOf(t);
                     }
-                    // If cookies set with token/refresh, capture them
                     List<String> setCookies = response.getHeaders().get("Set-Cookie");
                     if (setCookies != null && !setCookies.isEmpty()) {
-                        // combine cookies into single cookie header value
                         String cookieHeader = setCookies.stream()
                                 .map(s -> s.split(";", 2)[0])
                                 .collect(Collectors.joining("; "));
                         lastAuthCookie = cookieHeader;
                         log.info("Captured Taiga auth cookie: {}", cookieHeader);
-                        // try to extract a token-like cookie value to return as token too
                         for (String ck : cookieHeader.split("; ")) {
                             if (ck.contains("token=") || ck.contains("access=")) {
                                 String val = ck.substring(ck.indexOf('=') + 1);
@@ -176,7 +166,6 @@ public class TaigaConnectionImpl implements TaigaConnection {
                     log.warn("Taiga auth candidate (JSON) failed: status={} body={}", he.getStatusCode(), respBody);
                 }
 
-                // Try form-encoded variant
                 try {
                     HttpHeaders formHeaders = new HttpHeaders();
                     formHeaders.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -225,15 +214,10 @@ public class TaigaConnectionImpl implements TaigaConnection {
         return "";
     }
 
-    /**
-     * Prepare headers for authenticated Taiga requests.
-     * Priority: TAIGA_TOKEN env -> Authorization: Bearer <token> (if JWT-looking) -> Cookie header (if we captured it) -> X-TAIGA-TOKEN
-     */
     private HttpHeaders prepareAuthHeaders() {
         HttpHeaders headers = new HttpHeaders();
         String envToken = System.getenv("TAIGA_TOKEN");
         if (envToken != null && !envToken.isBlank()) {
-            // If token looks like JWT (has dots) use Bearer, else use X-TAIGA-TOKEN
             if (envToken.contains(".")) {
                 headers.set("Authorization", "Bearer " + envToken);
             } else {
@@ -242,13 +226,11 @@ public class TaigaConnectionImpl implements TaigaConnection {
             return headers;
         }
 
-        // If we captured a cookie from auth, use it
         if (lastAuthCookie != null && !lastAuthCookie.isBlank()) {
             headers.set("Cookie", lastAuthCookie);
             return headers;
         }
 
-        // fallback: try to obtain a token dynamically
         String token = getTaigaToken();
         if (token != null && !token.isBlank()) {
             if (token.contains(".")) {
@@ -270,7 +252,6 @@ public class TaigaConnectionImpl implements TaigaConnection {
                 headers.set("X-TAIGA-TOKEN", token);
             }
             HttpEntity<Void> request = new HttpEntity<>(headers);
-            // Try to fetch projects list and match by slug or name
             ResponseEntity<List> resp = restTemplate.exchange(TAIGA_BASE_URL + "/projects", HttpMethod.GET, request, List.class);
             List projects = resp.getBody();
             if (projects != null) {
