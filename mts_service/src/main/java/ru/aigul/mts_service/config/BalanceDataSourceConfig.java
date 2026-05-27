@@ -13,6 +13,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 @Configuration
 @EnableJpaRepositories(
@@ -21,6 +23,8 @@ import java.util.Map;
         transactionManagerRef = "balanceTransactionManager"
 )
 public class BalanceDataSourceConfig {
+
+    private static final Logger LOGGER = Logger.getLogger(BalanceDataSourceConfig.class.getName());
 
     @Value("${SPRING_DATASOURCE_BALANCE_URL:jdbc:postgresql://balance_db:5432/mts_balance?stringtype=unspecified}")
     private String balanceUrl;
@@ -35,26 +39,30 @@ public class BalanceDataSourceConfig {
     public DataSource balanceDataSource() {
         PGSimpleDataSource ds = new PGSimpleDataSource();
         try {
-            String s = balanceUrl;
-            String prefix = "jdbc:postgresql://";
-            if (s.startsWith(prefix)) {
-                String rest = s.substring(prefix.length());
-                String hostPortDb = rest.split("\\?")[0];
-                String[] parts = hostPortDb.split("/");
-                String hostPort = parts[0];
-                String dbname = parts.length > 1 ? parts[1] : null;
-                String host = hostPort;
-                int port = 5432;
-                if (hostPort.contains(":")) {
-                    String[] hp = hostPort.split(":" );
-                    host = hp[0];
-                    port = Integer.parseInt(hp[1]);
+            if (balanceUrl != null) {
+                String s = balanceUrl;
+                String prefix = "jdbc:postgresql://";
+                if (s.startsWith(prefix)) {
+                    String rest = s.substring(prefix.length());
+                    String hostPortDb = rest.split("\\?")[0];
+                    String[] parts = hostPortDb.split("/");
+                    String hostPort = parts[0];
+                    String dbname = parts.length > 1 ? parts[1] : null;
+                    String host = hostPort;
+                    int port = 5432;
+                    if (hostPort.contains(":")) {
+                        String[] hp = hostPort.split(":" );
+                        host = hp[0];
+                        port = Integer.parseInt(hp[1]);
+                    }
+                    if (dbname != null) ds.setDatabaseName(dbname);
+                    ds.setServerNames(new String[]{host});
+                    ds.setPortNumbers(new int[]{port});
                 }
-                if (dbname != null) ds.setDatabaseName(dbname);
-                ds.setServerNames(new String[]{host});
-                ds.setPortNumbers(new int[]{port});
             }
         } catch (Exception e) {
+            // Log exception so it's visible during startup instead of silently ignored
+            LOGGER.log(Level.WARNING, "Failed to parse SPRING_DATASOURCE_BALANCE_URL='" + balanceUrl + "'", e);
         }
         ds.setUser(balanceUser);
         ds.setPassword(balancePassword);
@@ -73,6 +81,16 @@ public class BalanceDataSourceConfig {
         props.put("jakarta.persistence.transactionType", "JTA");
         props.put("hibernate.transaction.jta.platform", "org.hibernate.engine.transaction.jta.platform.internal.NarayanaJtaPlatform");
         props.put("hibernate.hbm2ddl.auto", "update");
+        // Explicitly provide JDBC URL and dialect so Hibernate doesn't try to determine dialect from JDBC metadata
+        props.put("jakarta.persistence.jdbc.url", balanceUrl);
+        props.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+        // Prevent Hibernate from opening a temporary JDBC connection (Driver.connect) to read metadata
+        // which may happen without credentials and cause "The server requested SCRAM-based authentication, but no password was provided."
+        props.put("hibernate.temp.use_jdbc_metadata_defaults", "false");
+        // Also provide user/password and driver to be safe
+        props.put("jakarta.persistence.jdbc.user", balanceUser);
+        props.put("jakarta.persistence.jdbc.password", balancePassword);
+        props.put("jakarta.persistence.jdbc.driver", "org.postgresql.Driver");
         emf.setJpaPropertyMap(props);
         return emf;
     }

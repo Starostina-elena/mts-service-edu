@@ -38,12 +38,13 @@ services:
 
   app:
     build: .
-    container_name: mts_service_app
     depends_on:
       db:
         condition: service_healthy
       balance_db:
         condition: service_healthy
+      kafka:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
@@ -59,12 +60,75 @@ services:
       TAIGA_USER: manager
       TAIGA_PASSWORD: managerpass
       TAIGA_TOKEN: ${TAIGA_TOKEN:-}
+      # Kafka bootstrap address for in-compose Kafka (env name for Spring binding)
+      KAFKA_BOOTSTRAP: kafka:9092
+      # consumers flags - app will not run notification consumer (we'll run it in separate worker)
+      CONSUMERS_NOTIFICATIONS_ENABLED: "false"
+      CONSUMERS_TAIGA_ENABLED: "true"
     ports:
       - "8080:8080"
     restart: unless-stopped
     networks:
       - default
       - taiga
+
+  # notification worker runs the same image but only notification consumer is enabled
+  notification_worker:
+    build: .
+    depends_on:
+      kafka:
+        condition: service_started
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      KAFKA_BOOTSTRAP: kafka:9092
+      # enable only notifications consumer in this worker
+      CONSUMERS_NOTIFICATIONS_ENABLED: "true"
+      CONSUMERS_TAIGA_ENABLED: "false"
+      # Database settings (same as `app`) - needed so worker can connect to Postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_DATASOURCE_BALANCE_URL: jdbc:postgresql://balance_db:5432/${POSTGRES_DB_BALANCE:-mts_balance}?stringtype=unspecified
+      SPRING_DATASOURCE_BALANCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_BALANCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    restart: unless-stopped
+    networks:
+      - default
+
+  # Kafka stack (moved here from separate compose)
+  zookeeper:
+    image: "confluentinc/cp-zookeeper:7.4.0"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: "confluentinc/cp-kafka:7.4.0"
+    depends_on:
+      - zookeeper
+      - db
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      # Listeners: bind to all interfaces for container, advertise internal hostname for other services and host-accessible listener
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    networks:
+      - default
+    # no healthcheck here to avoid false failures during broker warmup
 
 #  taiga-db:
 #    image: postgres:13-alpine
