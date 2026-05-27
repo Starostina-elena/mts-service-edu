@@ -1,5 +1,0 @@
-# THIS FILE IS DEPRECATED
-# Kafka services have been moved into docker-compose.yml at the project root (service: kafka, zookeeper).
-# Keep this file only for reference. Use `docker compose -f docker-compose.yml up -d` to start the full stack.
-
-# Original content removed to avoid accidental double-start.

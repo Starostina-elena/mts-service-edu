@@ -7,6 +7,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import ru.aigul.mts_service.kafka.ApplicationCreatedEvent;
 import ru.aigul.mts_service.model.Application;
 import ru.aigul.mts_service.model.ApplicationStatus;
@@ -39,7 +40,6 @@ public class ApplicationNotificationScheduler {
         this.userRepository = userRepository;
     }
 
-    // Run every 5 minutes by default. Interval can be overridden with notifications.check-interval-ms
     @Scheduled(fixedRateString = "${notifications.check-interval-ms:300000}")
     public void sendPendingApplicationsSummary() {
         if (!notificationsEnabled) {
@@ -75,10 +75,8 @@ public class ApplicationNotificationScheduler {
                 }
             }
         } else {
-            // Fallback: log summary and also produce Kafka events for each application so NotificationConsumerWorker can process them
             log.info("Pending applications summary to managers (mail not configured):\n{}", summary);
 
-            // produce lightweight ApplicationCreatedEvent logs — KafkaProducerService could be used but we avoid creating another producer here
             for (Application a : pending) {
                 ApplicationCreatedEvent evt = new ApplicationCreatedEvent(
                         a.getId(),
@@ -108,4 +106,3 @@ public class ApplicationNotificationScheduler {
         return header + body;
     }
 }
-
