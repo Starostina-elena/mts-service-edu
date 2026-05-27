@@ -25,4 +25,6 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
                                       @Param("status") ApplicationStatus status,
                                       @Param("after") Long after,
                                       Limit limit);
+
+    List<Application> findAllByStatus(ApplicationStatus status);
 }

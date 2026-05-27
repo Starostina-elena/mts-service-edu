@@ -21,14 +21,20 @@ import ru.aigul.mts_service.mapper.ApplicationMapper;
 import ru.aigul.mts_service.model.*;
 import ru.aigul.mts_service.balance.model.Balance;
 import ru.aigul.mts_service.balance.repository.BalanceRepository;
+import ru.aigul.mts_service.jca.TaigaConnection;
+import ru.aigul.mts_service.jca.TaigaConnectionFactory;
 import ru.aigul.mts_service.repository.*;
+import ru.aigul.mts_service.kafka.ApplicationCreatedEvent;
+import ru.aigul.mts_service.kafka.KafkaProducerService;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 
 import java.util.Collections;
 import java.util.Optional;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
@@ -43,6 +49,11 @@ public class ApplicationService {
     private final ServiceRepository serviceRepository;
     private final ApplicationMapper applicationMapper;
     private final UserService userService;
+    private final TaigaConnectionFactory taigaConnectionFactory;
+    private final KafkaProducerService kafkaProducerService;
+
+    @Value("${app.sync.taiga.enabled:false}")
+    private boolean syncTaigaEnabled;
 
     @org.springframework.beans.factory.annotation.Autowired
     @org.springframework.beans.factory.annotation.Qualifier("primaryDataSource")
@@ -98,6 +109,31 @@ public class ApplicationService {
         application.setAdditionalServices(new HashSet<>(additionalServices));
 
         application = applicationRepository.save(application);
+
+        try {
+            ApplicationCreatedEvent evt = new ApplicationCreatedEvent(
+                    application.getId(),
+                    application.getUser() != null ? application.getUser().getId() : null,
+                    application.getTariff() != null ? application.getTariff().getId() : null,
+                    application.getAddress(),
+                    Instant.now().toString()
+            );
+            log.info("Publishing application.created event for applicationId={} userId={} tariffId={}", evt.getApplicationId(), evt.getUserId(), evt.getTariffId());
+            kafkaProducerService.sendApplicationCreated(evt);
+            log.info("application.created event published (async) for applicationId={}", application.getId());
+        } catch (Exception e) {
+            log.error("Failed to publish application.created event", e);
+        }
+
+        if (syncTaigaEnabled) {
+            try (TaigaConnection connection = taigaConnectionFactory.getConnection()) {
+                connection.createIssue("New Application: " + application.getId(), "Tariff: " + (application.getTariff() != null ? application.getTariff().getName() : "n/a"));
+                log.info("Synchronous Taiga issue created for applicationId={}", application.getId());
+            } catch (Exception e) {
+                log.error("Failed to create Taiga issue synchronously (fallback)", e);
+            }
+        }
+
         return applicationMapper.toDto(application);
     }
 
@@ -165,6 +201,13 @@ public class ApplicationService {
         application.setStatus(ApplicationStatus.APPROVED);
         application = applicationRepository.save(application);
         log.debug("approve(): application saved: id={} status={}", application.getId(), application.getStatus());
+
+        try (TaigaConnection connection = taigaConnectionFactory.getConnection()) {
+            connection.updateIssueStatus(application.getId(), "APPROVED");
+        } catch (Exception e) {
+            log.error("Failed to update Taiga issue", e);
+        }
+
         return applicationMapper.toDto(application);
     }
     @Transactional
@@ -193,6 +236,13 @@ public class ApplicationService {
         application.setStatus(ApplicationStatus.REJECTED);
         application.setRejectReason(dto.getReason());
         application = applicationRepository.save(application);
+
+        try (TaigaConnection connection = taigaConnectionFactory.getConnection()) {
+            connection.updateIssueStatus(application.getId(), "REJECTED");
+        } catch (Exception e) {
+            log.error("Failed to update Taiga issue", e);
+        }
+
         return applicationMapper.toDto(application);
     }
 }
