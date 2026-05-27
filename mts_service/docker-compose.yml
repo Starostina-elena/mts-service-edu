@@ -53,95 +53,240 @@ services:
       SPRING_DATASOURCE_BALANCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
       ELASTICSEARCH_URL: http://elasticsearch:9200
+      TAIGA_API_URL: http://taiga-back:8000
+      # Taiga integration
+      TAIGA_PROJECT: applications
+      TAIGA_USER: manager
+      TAIGA_PASSWORD: managerpass
+      TAIGA_TOKEN: ${TAIGA_TOKEN:-}
     ports:
       - "8080:8080"
     restart: unless-stopped
+    networks:
+      - default
+      - taiga
 
-  taiga-db:
-    image: postgres:13-alpine
-    container_name: mts_service_taiga_db
-    environment:
-      - POSTGRES_DB=taiga
-      - POSTGRES_USER=taiga
-      - POSTGRES_PASSWORD=taiga
-    volumes:
-      - taiga_db_data:/var/lib/postgresql/data
-      - ./docker/taiga/init-taiga.sh:/docker-entrypoint-initdb.d/init-taiga.sh
-    restart: unless-stopped
-
-  taiga-rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: mts_service_taiga_rabbitmq
-    hostname: rabbitmq
-    environment:
-      - RABBITMQ_DEFAULT_USER=taiga
-      - RABBITMQ_DEFAULT_VHOST=taiga
-      - RABBITMQ_DEFAULT_PASS=taiga
-    ports:
-      - "15672:15672"
-    volumes:
-      - taiga_rabbitmq_data:/var/lib/rabbitmq
-    restart: unless-stopped
-
-  taiga-back:
-    image: taigaio/taiga-back:latest
-    container_name: mts_service_taiga_back
-    environment:
-      - TAIGA_SECRET_KEY=taigasecretkey
-      - TAIGA_SITES_DOMAIN=localhost
-      - TAIGA_SITES_SCHEME=http
-      - TAIGA_SUBPATH=
-      - POSTGRES_DB=taiga
-      - POSTGRES_USER=taiga
-      - POSTGRES_PASSWORD=taiga
-      - POSTGRES_HOST=taiga-db
-      - POSTGRES_PORT=5432
-      - RABBITMQ_USER=taiga
-      - RABBITMQ_PASS=taiga
-      - RABBITMQ_VHOST=taiga
-      - RABBITMQ_HOST=taiga-rabbitmq
-      - RABBITMQ_PORT=5672
-      - DEFAULT_FROM_EMAIL=taiga@example.com
-      - SERVER_EMAIL=taiga@example.com
-      - EMAIL_USE_TLS=False
-      - EMAIL_HOST=localhost
-      - EMAIL_PORT=25
-      - FORCE_HTTPS=False
-      - ALLOWED_HOSTS=localhost,127.0.0.1,taiga-back
-    ports:
-      - "8000:8000"
-    depends_on:
-      - taiga-db
-      - taiga-rabbitmq
-    restart: unless-stopped
-
-  taiga-events:
-    image: taigaio/taiga-events:latest
-    container_name: mts_service_taiga_events
-    environment:
-      - TAIGA_SECRET_KEY=taigasecretkey
-      - RABBITMQ_USER=taiga
-      - RABBITMQ_PASS=taiga
-      - RABBITMQ_VHOST=taiga
-      - RABBITMQ_HOST=taiga-rabbitmq
-    ports:
-      - "8888:8888"
-    depends_on:
-      - taiga-rabbitmq
-    restart: unless-stopped
-
-  taiga-front:
-    image: taigaio/taiga-front:latest
-    container_name: mts_service_taiga_front
-    environment:
-      - TAIGA_URL=http://localhost:8000
-      - TAIGA_WEBSOCKETS_URL=ws://localhost:8000
-      - TAIGA_SUBPATH=
-    ports:
-      - "9000:80"
-    depends_on:
-      - taiga-back
-    restart: unless-stopped
+#  taiga-db:
+#    image: postgres:13-alpine
+#    container_name: mts_service_taiga_db
+#    environment:
+#      - POSTGRES_DB=taiga
+#      - POSTGRES_USER=taiga
+#      - POSTGRES_PASSWORD=taiga
+#    volumes:
+#      - taiga_db_data:/var/lib/postgresql/data
+#      - ./docker/taiga/init-taiga.sh:/docker-entrypoint-initdb.d/init-taiga.sh
+#    ports:
+#        - "5434:5432"
+#    restart: unless-stopped
+#    healthcheck:
+#      test: ["CMD-SHELL","pg_isready -U taiga -d taiga || exit 1"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 10
+#
+#  taiga-rabbitmq:
+#    image: rabbitmq:3-management-alpine
+#    container_name: mts_service_taiga_rabbitmq
+#    hostname: rabbitmq
+#    environment:
+#      - RABBITMQ_DEFAULT_USER=taiga
+#      - RABBITMQ_DEFAULT_VHOST=taiga
+#      - RABBITMQ_DEFAULT_PASS=taiga
+#    ports:
+#      - "15672:15672"
+#    volumes:
+#      - taiga_rabbitmq_data:/var/lib/rabbitmq
+#    restart: unless-stopped
+#    healthcheck:
+#      test: ["CMD-SHELL","rabbitmq-diagnostics -q ping || exit 1"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 10
+#
+#  taiga-back:
+#    platform: linux/amd64
+#    image: taigaio/taiga-back:latest
+#    container_name: mts_service_taiga_back
+#    environment:
+#      - TAIGA_SECRET_KEY=taigasecretkey
+#      - TAIGA_SITES_DOMAIN=localhost
+#      - TAIGA_SITES_SCHEME=http
+#      - TAIGA_SUBPATH=
+#      - POSTGRES_DB=taiga
+#      - POSTGRES_USER=taiga
+#      - POSTGRES_PASSWORD=taiga
+#      - POSTGRES_HOST=taiga-db
+#      - POSTGRES_PORT=5432
+#      - RABBITMQ_USER=taiga
+#      - RABBITMQ_PASS=taiga
+#      - RABBITMQ_VHOST=taiga
+#      - RABBITMQ_HOST=taiga-rabbitmq
+#      - RABBITMQ_PORT=5672
+#      - DEFAULT_FROM_EMAIL=taiga@example.com
+#      - SERVER_EMAIL=taiga@example.com
+#      - EMAIL_USE_TLS=False
+#      - EMAIL_HOST=localhost
+#      - EMAIL_PORT=25
+#      - FORCE_HTTPS=False
+#      - ALLOWED_HOSTS=localhost,127.0.0.1,taiga-back
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      taiga-db:
+#        condition: service_healthy
+#      taiga-rabbitmq:
+#        condition: service_healthy
+#    restart: unless-stopped
+#
+#  taiga-init:
+#    platform: linux/amd64
+#    image: taigaio/taiga-back:latest
+#    container_name: mts_service_taiga_init
+#    depends_on:
+#      - taiga-back
+#    environment:
+#      - TAIGA_SECRET_KEY=taigasecretkey
+#      - TAIGA_SITES_DOMAIN=localhost
+#      - TAIGA_SITES_SCHEME=http
+#      - POSTGRES_DB=taiga
+#      - POSTGRES_USER=taiga
+#      - POSTGRES_PASSWORD=taiga
+#      - POSTGRES_HOST=taiga-db
+#      - POSTGRES_PORT=5432
+#    volumes:
+#      - ./docker/taiga/create-manager.sh:/taiga/create-manager.sh
+#    entrypoint: ["bash","-lc","until curl -sS http://taiga-back:8000/api/ >/dev/null 2>&1; do sleep 1; done; bash /taiga/create-manager.sh"]
+#    restart: "no"
+#
+#  taiga-events:
+#    platform: linux/amd64
+#    image: taigaio/taiga-events:latest
+#    container_name: mts_service_taiga_events
+#    environment:
+#      - TAIGA_SECRET_KEY=taigasecretkey
+#      - RABBITMQ_USER=taiga
+#      - RABBITMQ_PASS=taiga
+#      - RABBITMQ_VHOST=taiga
+#      - RABBITMQ_HOST=taiga-rabbitmq
+#    ports:
+#      - "8888:8888"
+#    depends_on:
+#      - taiga-rabbitmq
+#    restart: unless-stopped
+#
+#  taiga-redis:
+#    image: redis:6-alpine
+#    container_name: mts_service_taiga_redis
+#    restart: unless-stopped
+#    healthcheck:
+#      test: ["CMD-SHELL","redis-cli ping || exit 1"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#
+#  taiga-celery:
+#    platform: linux/amd64
+#    image: taigaio/taiga-back:latest
+#    container_name: mts_service_taiga_celery
+#    environment:
+#      - TAIGA_SECRET_KEY=taigasecretkey
+#      - POSTGRES_DB=taiga
+#      - POSTGRES_USER=taiga
+#      - POSTGRES_PASSWORD=taiga
+#      - POSTGRES_HOST=taiga-db
+#      - POSTGRES_PORT=5432
+#      - RABBITMQ_USER=taiga
+#      - RABBITMQ_PASS=taiga
+#      - RABBITMQ_VHOST=taiga
+#      - RABBITMQ_HOST=taiga-rabbitmq
+#      - REDIS_HOST=taiga-redis
+#      - REDIS_PORT=6379
+#    depends_on:
+#      - taiga-db
+#      - taiga-rabbitmq
+#      - taiga-redis
+#    command: ["celery","-A","taiga.celery","worker","-l","INFO"]
+#    restart: unless-stopped
+#
+#  taiga-celery-beat:
+#    platform: linux/amd64
+#    image: taigaio/taiga-back:latest
+#    container_name: mts_service_taiga_celery_beat
+#    environment:
+#      - TAIGA_SECRET_KEY=taigasecretkey
+#      - POSTGRES_DB=taiga
+#      - POSTGRES_USER=taiga
+#      - POSTGRES_PASSWORD=taiga
+#      - POSTGRES_HOST=taiga-db
+#      - POSTGRES_PORT=5432
+#      - RABBITMQ_USER=taiga
+#      - RABBITMQ_PASS=taiga
+#      - RABBITMQ_VHOST=taiga
+#      - RABBITMQ_HOST=taiga-rabbitmq
+#      - REDIS_HOST=taiga-redis
+#      - REDIS_PORT=6379
+#    depends_on:
+#      - taiga-db
+#      - taiga-rabbitmq
+#      - taiga-redis
+#    command: ["celery","-A","taiga.celery","beat","-l","INFO"]
+#    restart: unless-stopped
+#
+#  taiga-front:
+#    platform: linux/amd64
+#    image: taigaio/taiga-front:latest
+#    container_name: mts_service_taiga_front
+#    environment:
+#      - TAIGA_URL=http://localhost:8000
+#      - TAIGA_WEBSOCKETS_URL=ws://localhost:8000
+#      - TAIGA_SUBPATH=
+#    ports:
+#      - "9000:80"
+#    depends_on:
+#      - taiga-back
+#    restart: unless-stopped
+#
+#  taiga-async:
+#    platform: linux/amd64
+#    image: taigaio/taiga-back:latest
+#    container_name: mts_service_taiga_async
+#    environment:
+#      - TAIGA_SECRET_KEY=taigasecretkey
+#      - POSTGRES_DB=taiga
+#      - POSTGRES_USER=taiga
+#      - POSTGRES_PASSWORD=taiga
+#      - POSTGRES_HOST=taiga-db
+#      - POSTGRES_PORT=5432
+#      - RABBITMQ_USER=taiga
+#      - RABBITMQ_PASS=taiga
+#      - RABBITMQ_VHOST=taiga
+#      - RABBITMQ_HOST=taiga-rabbitmq
+#      - REDIS_HOST=taiga-redis
+#      - REDIS_PORT=6379
+#    depends_on:
+#      - taiga-back
+#      - taiga-rabbitmq
+#      - taiga-redis
+#    ports:
+#      - "8011:8011"
+#    command: ["bash","-lc","python3 manage.py runserver 0.0.0.0:8011"]
+#    restart: unless-stopped
+#
+#  taiga-protected:
+#    platform: linux/amd64
+#    image: taigaio/taiga-protected:latest
+#    container_name: mts_service_taiga_protected
+#    environment:
+#      - TAIGA_URL=http://localhost:8000
+#      - TAIGA_SITES_DOMAIN=localhost
+#    volumes:
+#      - taiga_media:/taiga/media
+#    ports:
+#      - "8001:80"
+#    depends_on:
+#      - taiga-back
+#    restart: unless-stopped
 
 
 #  elasticsearch:
@@ -180,4 +325,10 @@ volumes:
   balance_db_data:
   taiga_db_data:
   taiga_rabbitmq_data:
+  taiga_media:
   # esdata:
+
+networks:
+  taiga:
+    external: true
+    name: taiga-docker_taiga
