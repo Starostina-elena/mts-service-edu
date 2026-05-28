@@ -1,0 +1,35 @@
+{
+  "components": [
+    {
+      "label": "Tariff",
+      "type": "textfield",
+      "key": "tariffId",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "City",
+      "type": "textfield",
+      "key": "cityId"
+    },
+    {
+      "label": "Address",
+      "type": "textarea",
+      "key": "address",
+      "validate": {
+        "required": true,
+        "maxLength": 500
+      }
+    },
+    {
+      "label": "Additional services",
+      "type": "textfield",
+      "key": "additionalServiceIds"
+    }
+  ],
+  "type": "default",
+  "id": "application-create",
+  "executionPlatform": "Camunda Platform",
+  "executionPlatformVersion": "7.24.0"
+}

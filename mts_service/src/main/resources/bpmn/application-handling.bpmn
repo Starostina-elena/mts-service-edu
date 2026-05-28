@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_ApplicationHandling" targetNamespace="http://aigul.ru/mts-service">
+  <bpmn:process id="applicationHandling" name="MTS application handling" isExecutable="true" camunda:historyTimeToLive="P30D">
+    <bpmn:startEvent id="applicationSubmitted" name="Application submitted" camunda:formRef="application-create" camunda:formRefBinding="latest">
+      <bpmn:outgoing>Flow_Start_Create</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="createApplication" name="Create application" camunda:delegateExpression="${createApplicationDelegate}">
+      <bpmn:incoming>Flow_Start_Create</bpmn:incoming>
+      <bpmn:outgoing>Flow_Create_Publish</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="publishApplicationCreated" name="Publish created event" camunda:asyncBefore="true" camunda:delegateExpression="${publishApplicationCreatedDelegate}">
+      <bpmn:incoming>Flow_Create_Publish</bpmn:incoming>
+      <bpmn:outgoing>Flow_Publish_Decision</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="managerDecision" name="Manager decision" camunda:candidateGroups="MANAGER" camunda:formRef="manager-decision" camunda:formRefBinding="latest">
+      <bpmn:incoming>Flow_Publish_Decision</bpmn:incoming>
+      <bpmn:outgoing>Flow_Decision_Gateway</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:boundaryEvent id="pendingReminderTimer" attachedToRef="managerDecision" cancelActivity="false">
+      <bpmn:outgoing>Flow_Timer_Notify</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeCycle>R/PT5M</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:serviceTask id="notifyManagers" name="Notify managers" camunda:delegateExpression="${notifyManagersDelegate}">
+      <bpmn:incoming>Flow_Timer_Notify</bpmn:incoming>
+      <bpmn:outgoing>Flow_Notify_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="notificationSent" name="Notification sent">
+      <bpmn:incoming>Flow_Notify_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="approvalGateway" name="Approved?">
+      <bpmn:incoming>Flow_Decision_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Gateway_Approve</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Gateway_Reject</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="approveApplication" name="Approve application" camunda:delegateExpression="${approveApplicationDelegate}">
+      <bpmn:incoming>Flow_Gateway_Approve</bpmn:incoming>
+      <bpmn:outgoing>Flow_Approve_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="rejectApplication" name="Reject application" camunda:delegateExpression="${rejectApplicationDelegate}">
+      <bpmn:incoming>Flow_Gateway_Reject</bpmn:incoming>
+      <bpmn:outgoing>Flow_Reject_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="applicationApproved" name="Approved">
+      <bpmn:incoming>Flow_Approve_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="applicationRejected" name="Rejected">
+      <bpmn:incoming>Flow_Reject_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_Create" sourceRef="applicationSubmitted" targetRef="createApplication" />
+    <bpmn:sequenceFlow id="Flow_Create_Publish" sourceRef="createApplication" targetRef="publishApplicationCreated" />
+    <bpmn:sequenceFlow id="Flow_Publish_Decision" sourceRef="publishApplicationCreated" targetRef="managerDecision" />
+    <bpmn:sequenceFlow id="Flow_Decision_Gateway" sourceRef="managerDecision" targetRef="approvalGateway" />
+    <bpmn:sequenceFlow id="Flow_Gateway_Approve" sourceRef="approvalGateway" targetRef="approveApplication">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approved == true}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Gateway_Reject" sourceRef="approvalGateway" targetRef="rejectApplication">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${approved == false}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Approve_End" sourceRef="approveApplication" targetRef="applicationApproved" />
+    <bpmn:sequenceFlow id="Flow_Reject_End" sourceRef="rejectApplication" targetRef="applicationRejected" />
+    <bpmn:sequenceFlow id="Flow_Timer_Notify" sourceRef="pendingReminderTimer" targetRef="notifyManagers" />
+    <bpmn:sequenceFlow id="Flow_Notify_End" sourceRef="notifyManagers" targetRef="notificationSent" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ApplicationHandling">
+    <bpmndi:BPMNPlane id="BPMNPlane_ApplicationHandling" bpmnElement="applicationHandling">
+      <bpmndi:BPMNShape id="Shape_applicationSubmitted" bpmnElement="applicationSubmitted"><dc:Bounds x="160" y="180" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_createApplication" bpmnElement="createApplication"><dc:Bounds x="250" y="158" width="120" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_publishApplicationCreated" bpmnElement="publishApplicationCreated"><dc:Bounds x="430" y="158" width="140" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_managerDecision" bpmnElement="managerDecision"><dc:Bounds x="630" y="158" width="130" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_pendingReminderTimer" bpmnElement="pendingReminderTimer"><dc:Bounds x="712" y="220" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_notifyManagers" bpmnElement="notifyManagers"><dc:Bounds x="650" y="320" width="130" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_notificationSent" bpmnElement="notificationSent"><dc:Bounds x="850" y="342" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_approvalGateway" bpmnElement="approvalGateway" isMarkerVisible="true"><dc:Bounds x="830" y="173" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_approveApplication" bpmnElement="approveApplication"><dc:Bounds x="940" y="90" width="130" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_rejectApplication" bpmnElement="rejectApplication"><dc:Bounds x="940" y="230" width="130" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_applicationApproved" bpmnElement="applicationApproved"><dc:Bounds x="1140" y="112" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_applicationRejected" bpmnElement="applicationRejected"><dc:Bounds x="1140" y="252" width="36" height="36" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Flow_Start_Create" bpmnElement="Flow_Start_Create"><di:waypoint x="196" y="198" /><di:waypoint x="250" y="198" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Create_Publish" bpmnElement="Flow_Create_Publish"><di:waypoint x="370" y="198" /><di:waypoint x="430" y="198" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Publish_Decision" bpmnElement="Flow_Publish_Decision"><di:waypoint x="570" y="198" /><di:waypoint x="630" y="198" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Decision_Gateway" bpmnElement="Flow_Decision_Gateway"><di:waypoint x="760" y="198" /><di:waypoint x="830" y="198" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Gateway_Approve" bpmnElement="Flow_Gateway_Approve"><di:waypoint x="855" y="173" /><di:waypoint x="855" y="130" /><di:waypoint x="940" y="130" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Gateway_Reject" bpmnElement="Flow_Gateway_Reject"><di:waypoint x="855" y="223" /><di:waypoint x="855" y="270" /><di:waypoint x="940" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Approve_End" bpmnElement="Flow_Approve_End"><di:waypoint x="1070" y="130" /><di:waypoint x="1140" y="130" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Reject_End" bpmnElement="Flow_Reject_End"><di:waypoint x="1070" y="270" /><di:waypoint x="1140" y="270" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Timer_Notify" bpmnElement="Flow_Timer_Notify"><di:waypoint x="730" y="256" /><di:waypoint x="730" y="320" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Notify_End" bpmnElement="Flow_Notify_End"><di:waypoint x="780" y="360" /><di:waypoint x="850" y="360" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

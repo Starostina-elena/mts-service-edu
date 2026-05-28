@@ -74,7 +74,7 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationDto create(Long userId, ApplicationCreateDto dto) {
+    public ApplicationDto createApplicationRecord(Long userId, ApplicationCreateDto dto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -110,6 +110,13 @@ public class ApplicationService {
 
         application = applicationRepository.save(application);
 
+        return applicationMapper.toDto(application);
+    }
+
+    @Transactional(readOnly = true)
+    public void publishCreatedEvent(Long applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
         try {
             ApplicationCreatedEvent evt = new ApplicationCreatedEvent(
                     application.getId(),
@@ -133,8 +140,6 @@ public class ApplicationService {
                 log.error("Failed to create Taiga issue synchronously (fallback)", e);
             }
         }
-
-        return applicationMapper.toDto(application);
     }
 
     @Transactional(readOnly = true)
@@ -148,6 +153,13 @@ public class ApplicationService {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
         return applicationMapper.toDetailDto(application);
+    }
+
+    @Transactional(readOnly = true)
+    public ApplicationDto getDto(Long applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
+        return applicationMapper.toDto(application);
     }
 
     @Transactional(transactionManager = "transactionManager")
