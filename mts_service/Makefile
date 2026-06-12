@@ -3,6 +3,7 @@ COMPOSE = docker compose -f docker-compose.yml --env-file .env
 .PHONY: up migrate down logs ps build
 
 up:
+	./gradlew bootJar -x test
 	$(COMPOSE) up --build -d
 
 migrate:
@@ -19,4 +20,3 @@ ps:
 
 build:
 	$(COMPOSE) build app
-

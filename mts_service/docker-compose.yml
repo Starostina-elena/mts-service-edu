@@ -37,7 +37,9 @@ services:
       retries: 5
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.local
     depends_on:
       db:
         condition: service_healthy
@@ -62,6 +64,7 @@ services:
       KAFKA_BOOTSTRAP: kafka:9092
       CONSUMERS_NOTIFICATIONS_ENABLED: "false"
       CONSUMERS_TAIGA_ENABLED: "true"
+      APP_CAMUNDA_DEPLOY_PROCESSES: "true"
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -70,7 +73,9 @@ services:
       - taiga
 
   notification_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.local
     depends_on:
       kafka:
         condition: service_started
@@ -81,6 +86,7 @@ services:
       KAFKA_BOOTSTRAP: kafka:9092
       CONSUMERS_NOTIFICATIONS_ENABLED: "true"
       CONSUMERS_TAIGA_ENABLED: "false"
+      APP_CAMUNDA_DEPLOY_PROCESSES: "false"
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-mts_db}?stringtype=unspecified
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}

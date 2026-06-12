@@ -1,0 +1,21 @@
+{
+  "components": [
+    {
+      "label": "Approved",
+      "type": "checkbox",
+      "key": "approved",
+      "validate": {
+        "required": true
+      }
+    },
+    {
+      "label": "Reject reason",
+      "type": "textarea",
+      "key": "rejectReason"
+    }
+  ],
+  "type": "default",
+  "id": "manager-decision",
+  "executionPlatform": "Camunda Platform",
+  "executionPlatformVersion": "7.24.0"
+}

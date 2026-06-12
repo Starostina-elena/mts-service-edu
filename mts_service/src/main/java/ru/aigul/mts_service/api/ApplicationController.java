@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.aigul.mts_service.dto.CursorPage;
 import ru.aigul.mts_service.dto.application.*;
 import ru.aigul.mts_service.model.ApplicationStatus;
+import ru.aigul.mts_service.service.ApplicationProcessService;
 import ru.aigul.mts_service.service.ApplicationService;
 import ru.aigul.mts_service.service.UserService;
 import ru.aigul.mts_service.exception.UserNotFoundException;
@@ -22,6 +23,7 @@ import ru.aigul.mts_service.model.User;
 public class ApplicationController {
 
     private final ApplicationService applicationService;
+    private final ApplicationProcessService applicationProcessService;
     private final UserService userService;
 
     @Value("${app.pagination.default-limit}")
@@ -37,7 +39,7 @@ public class ApplicationController {
                                  @RequestHeader(value = "X-Mock-User", required = false) String mockUser,
                                  @Valid @RequestBody ApplicationCreateDto dto) {
         Long effectiveUserId = resolveUserId(userId, authEmail, mockUser);
-        return applicationService.create(effectiveUserId, dto);
+        return applicationProcessService.create(effectiveUserId, dto);
     }
 
     @GetMapping
@@ -60,7 +62,7 @@ public class ApplicationController {
                                                    @RequestHeader(value = "X-Mock-User", required = false) String mockUser,
                                                    @PathVariable Long applicationId) {
         Long effectiveUserId = resolveUserId(userId, authEmail, mockUser);
-        return ResponseEntity.ok(applicationService.approve(effectiveUserId, applicationId));
+        return ResponseEntity.ok(applicationProcessService.approve(effectiveUserId, applicationId));
     }
 
     @PostMapping("/{applicationId}/reject")
@@ -70,7 +72,7 @@ public class ApplicationController {
                                                   @PathVariable Long applicationId,
                                                   @Valid @RequestBody ApplicationRejectDto dto) {
         Long effectiveUserId = resolveUserId(userId, authEmail, mockUser);
-        return ResponseEntity.ok(applicationService.reject(effectiveUserId, applicationId, dto));
+        return ResponseEntity.ok(applicationProcessService.reject(effectiveUserId, applicationId, dto));
     }
 
     private Long resolveUserId(Long headerUserId, String authEmail, String mockUser) {

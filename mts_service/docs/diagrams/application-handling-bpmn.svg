@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="520" viewBox="0 0 1280 520" role="img" aria-labelledby="title desc">
+  <title id="title">BPMN-диаграмма обработки заявки</title>
+  <desc id="desc">BPMN-диаграмма бизнес-процесса обработки заявки МТС под управлением Camunda.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f2937"/>
+    </marker>
+    <style>
+      .bg{fill:#f6f8fb}
+      .lane{fill:#fff;stroke:#d8dee9;stroke-width:1}
+      .task{fill:#fff;stroke:#1f2937;stroke-width:1.5}
+      .service{fill:#f2f7ff}
+      .user{fill:#fff7ed}
+      .event{fill:#fff;stroke:#1f2937;stroke-width:2}
+      .timer{fill:#fff;stroke:#1f2937;stroke-width:1.5}
+      .gateway{fill:#fff;stroke:#1f2937;stroke-width:1.5}
+      .flow{fill:none;stroke:#1f2937;stroke-width:1.5;marker-end:url(#arrow)}
+      .timer-flow{fill:none;stroke:#1f2937;stroke-width:1.5;stroke-dasharray:6 4;marker-end:url(#arrow)}
+      .label{font:14px Arial,sans-serif;fill:#111827}
+      .small{font:12px Arial,sans-serif;fill:#4b5563}
+      .title{font:700 20px Arial,sans-serif;fill:#111827}
+      .lane-title{font:700 13px Arial,sans-serif;fill:#374151}
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1280" height="520"/>
+  <text class="title" x="40" y="38">Обработка заявки МТС: BPMN 2.0</text>
+  <rect class="lane" x="40" y="65" width="1200" height="160" rx="8"/>
+  <rect class="lane" x="40" y="245" width="1200" height="220" rx="8"/>
+  <text class="lane-title" x="62" y="92">Пользователь / Система</text>
+  <text class="lane-title" x="62" y="272">Менеджер / BPMS</text>
+
+  <circle class="event" cx="125" cy="150" r="22"/>
+  <text class="label" x="84" y="190">Заявка</text>
+  <text class="label" x="78" y="207">отправлена</text>
+  <text class="small" x="82" y="222">Camunda Form</text>
+
+  <rect class="task service" x="210" y="115" width="145" height="70" rx="8"/>
+  <text class="label" x="237" y="145">Создать</text>
+  <text class="label" x="245" y="164">заявку</text>
+  <text class="small" x="229" y="180">PENDING</text>
+
+  <rect class="task service" x="420" y="115" width="165" height="70" rx="8"/>
+  <text class="label" x="446" y="143">Отправить</text>
+  <text class="label" x="455" y="162">событие</text>
+  <text class="small" x="452" y="180">async Kafka</text>
+
+  <rect class="task user" x="650" y="115" width="155" height="70" rx="8"/>
+  <text class="label" x="675" y="145">Решение</text>
+  <text class="label" x="674" y="164">менеджера</text>
+  <text class="small" x="674" y="180">MANAGER</text>
+
+  <circle class="timer" cx="785" cy="185" r="15"/>
+  <path d="M785 176 v9 l7 4" fill="none" stroke="#1f2937" stroke-width="1.5"/>
+  <circle cx="785" cy="185" r="10" fill="none" stroke="#1f2937" stroke-width="1"/>
+  <text class="small" x="805" y="210">R/PT5M</text>
+
+  <rect class="task service" x="710" y="320" width="155" height="70" rx="8"/>
+  <text class="label" x="731" y="351">Уведомить</text>
+  <text class="label" x="731" y="370">менеджеров</text>
+
+  <circle class="event" cx="950" cy="355" r="20"/>
+  <circle class="event" cx="950" cy="355" r="15"/>
+  <text class="label" x="910" y="395">Уведомление</text>
+  <text class="label" x="923" y="412">отправлено</text>
+
+  <path class="gateway" d="M900 150 l38 -38 l38 38 l-38 38 z"/>
+  <text class="label" x="902" y="150">Одобрено?</text>
+
+  <rect class="task service" x="1040" y="85" width="145" height="70" rx="8"/>
+  <text class="label" x="1084" y="115">Одобрить</text>
+  <text class="small" x="1050" y="135">списание + Taiga</text>
+
+  <rect class="task service" x="1040" y="215" width="145" height="70" rx="8"/>
+  <text class="label" x="1083" y="245">Отклонить</text>
+  <text class="small" x="1058" y="265">причина + Taiga</text>
+
+  <circle class="event" cx="1210" cy="120" r="20"/>
+  <circle class="event" cx="1210" cy="120" r="15"/>
+  <text class="label" x="1178" y="158">Одобрено</text>
+
+  <circle class="event" cx="1210" cy="250" r="20"/>
+  <circle class="event" cx="1210" cy="250" r="15"/>
+  <text class="label" x="1178" y="288">Отклонено</text>
+
+  <path class="flow" d="M147 150 H210"/>
+  <path class="flow" d="M355 150 H420"/>
+  <path class="flow" d="M585 150 H650"/>
+  <path class="flow" d="M805 150 H900"/>
+  <path class="flow" d="M938 112 V120 H1040"/>
+  <path class="flow" d="M1185 120 H1190"/>
+  <path class="flow" d="M938 188 V250 H1040"/>
+  <path class="flow" d="M1185 250 H1190"/>
+  <path class="timer-flow" d="M785 200 V320"/>
+  <path class="flow" d="M865 355 H930"/>
+
+  <text class="small" x="970" y="112">true</text>
+  <text class="small" x="970" y="238">false</text>
+  <text class="small" x="430" y="105">camunda:asyncBefore</text>
+  <text class="small" x="650" y="105">Camunda Form</text>
+</svg>

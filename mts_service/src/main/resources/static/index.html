@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MTS BPM</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1>MTS BPM</h1>
+        <p>Заявки, задачи менеджера и Camunda Forms</p>
+      </div>
+      <label class="user-switch">
+        <span>Роль</span>
+        <select id="actor">
+          <option value="user@test.com">Пользователь</option>
+          <option value="manager@test.com">Менеджер</option>
+        </select>
+      </label>
+    </header>
+
+    <section class="grid">
+      <form id="createForm" class="panel">
+        <div class="panel-head">
+          <h2>Новая заявка</h2>
+          <button type="submit">Создать</button>
+        </div>
+        <div id="createFields" class="fields"></div>
+      </form>
+
+      <form id="decisionForm" class="panel">
+        <div class="panel-head">
+          <h2>Решение</h2>
+          <div class="actions">
+            <button type="button" id="approveBtn">Одобрить</button>
+            <button type="submit">Отклонить</button>
+          </div>
+        </div>
+        <label class="field">
+          <span>Заявка</span>
+          <select id="applicationSelect"></select>
+        </label>
+        <div id="decisionFields" class="fields"></div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Заявки</h2>
+        <div class="actions">
+          <button type="button" id="topUpBtn">Пополнить</button>
+          <button type="button" id="refreshBtn">Обновить</button>
+        </div>
+      </div>
+      <div id="notice" class="notice"></div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Тариф</th>
+            <th>Адрес</th>
+            <th>Статус</th>
+            <th>Причина</th>
+          </tr>
+          </thead>
+          <tbody id="applicationsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

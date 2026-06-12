@@ -48,6 +48,7 @@ dependencies {
     implementation 'jakarta.resource:jakarta.resource-api:2.0.0'
     implementation 'org.apache.kafka:kafka-clients:3.6.0'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.camunda.bpm:camunda-engine-spring:7.24.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
